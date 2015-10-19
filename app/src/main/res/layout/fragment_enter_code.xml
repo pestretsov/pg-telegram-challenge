@@ -6,6 +6,10 @@
     <EditText
         android:layout_width="500dp"
         android:layout_height="50dp"
-        android:id="@+id/codeField"/>
+        android:lines="1"
+        android:singleLine="true"
+        android:inputType="numberDecimal"
+        android:id="@+id/codeField"
+        android:hint="Enter Code"/>
 
 </FrameLayout>
