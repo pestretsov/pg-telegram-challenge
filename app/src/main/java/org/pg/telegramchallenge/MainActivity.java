@@ -8,6 +8,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v4.app.*;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,7 +18,7 @@ import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TdApi;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements iHostMessenger {
 
     private static final String TAG = "MainActivity";
     private ServiceConnection conn;
@@ -25,13 +26,60 @@ public class MainActivity extends AppCompatActivity {
     private Messenger mMessenger = new Messenger(new IncomingHandler());
     private Messenger mService = null;
 
+    private FragmentManager fragmentManager = getSupportFragmentManager();
+    private FragmentTransaction fragmentTransaction;
+
+    @Override
+    public void sendMessage(Message msg) {
+        msg.replyTo = mMessenger;
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
 
-            Object o = msg.obj;
             if (msg.obj instanceof TdApi.TLObject) {
-                Toast.makeText(MainActivity.this, msg.obj.toString(), Toast.LENGTH_LONG).show();
+
+                TdApi.TLObject receivedObj = (TdApi.TLObject) msg.obj;
+
+                Fragment currentFragment = fragmentManager.findFragmentById(R.id.fragment_holder);
+                switch (receivedObj.getConstructor()) {
+                    case TdApi.AuthStateOk.CONSTRUCTOR:
+                        Toast.makeText(MainActivity.this, "Authorisation is successfull", Toast.LENGTH_LONG).show();
+
+                        fragmentTransaction = fragmentManager.beginTransaction();
+
+                        fragmentTransaction.replace(R.id.fragment_holder, new ListFragment());
+                        fragmentManager.popBackStack();
+                        fragmentManager.popBackStack();
+
+                        fragmentTransaction.commit();
+
+                        break;
+
+                    case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
+                        fragmentTransaction = fragmentManager.beginTransaction();
+                        currentFragment = new PhoneNumberFragment();
+                        fragmentTransaction.add(R.id.fragment_holder, currentFragment).commit();
+                        break;
+
+                    case TdApi.AuthStateWaitCode.CONSTRUCTOR:
+                        Toast.makeText(MainActivity.this, "Waiting for code!", Toast.LENGTH_LONG).show();
+
+                        fragmentTransaction = fragmentManager.beginTransaction();
+                        currentFragment = new PassCodeFragment();
+                        fragmentTransaction.replace(R.id.fragment_holder, currentFragment).addToBackStack(null).commit();
+
+                        break;
+
+                    default:
+                        break;
+                }
             }
         }
     }
@@ -41,8 +89,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Message msg = new Message();
+        startService(new Intent(this, HandlerService.class));
     }
 
     @Override
@@ -95,11 +142,22 @@ public class MainActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        Fragment currentFragment = fragmentManager.findFragmentById(R.id.fragment_holder);
+
+        switch (id) {
+            case(R.id.action_ok):
+                if (currentFragment instanceof iConfirmable)
+                    ((iConfirmable)currentFragment).confirm();
+                else {
+                    Message msg = Message.obtain();
+
+                    msg.obj = new TdApi.ResetAuth(false);
+                    sendMessage(msg);
+                }
+                break;
         }
 
+        //noinspection SimplifiableIfStatement
         return super.onOptionsItemSelected(item);
     }
 
