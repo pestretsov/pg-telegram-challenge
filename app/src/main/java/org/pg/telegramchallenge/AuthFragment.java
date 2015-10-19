@@ -11,10 +11,8 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.drinkless.td.libcore.telegram.TdApi;
 
-/**
- * A simple {@link Fragment} subclass.
- */
 public class AuthFragment extends Fragment {
 
     public AuthFragment() {
@@ -27,19 +25,16 @@ public class AuthFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_auth, container, false);
 
-        EditText phoneNumber = (EditText)view.findViewById(R.id.phoneNumber);
+        final EditText phoneNumber = (EditText)view.findViewById(R.id.phoneNumber);
         phoneNumber.setOnEditorActionListener(new EditText.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH ||
-                        actionId == EditorInfo.IME_ACTION_DONE ||
-                        event.getAction() == KeyEvent.ACTION_DOWN &&
-                                event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                        actionId == EditorInfo.IME_ACTION_DONE || event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
                     if (!event.isShiftPressed()) {
+                        String number = phoneNumber.getText().toString();
+                        ((FragmentHandler)getActivity()).replaceFragmentFromTLObject(new TdApi.SetAuthPhoneNumber(number));
 
-
-                        // TODO: LOGIC TO CHANGE FRAGMENT
-                        // DONT WANT TO SPAGHETTI-CODE
                         return true;
                     }
                 }

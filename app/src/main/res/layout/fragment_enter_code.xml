@@ -3,4 +3,9 @@
     android:layout_height="match_parent"
     tools:context="com.example.artemypestretsov.telchaapplicationapproach.EnterCodeFragment">
 
+    <EditText
+        android:layout_width="500dp"
+        android:layout_height="50dp"
+        android:id="@+id/codeField"/>
+
 </FrameLayout>

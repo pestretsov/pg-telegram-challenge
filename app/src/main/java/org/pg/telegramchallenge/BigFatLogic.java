@@ -42,7 +42,6 @@ public class BigFatLogic extends Application implements Client.ResultHandler {
 
             if (msg.obj instanceof  TdApi.TLFunction) {
                 TdApi.TLFunction func = (TdApi.TLFunction) msg.obj;
-
                 Log.e(TAG, "handleMessage");
                 TG.getClientInstance().send(func, this);
             }
@@ -52,7 +51,7 @@ public class BigFatLogic extends Application implements Client.ResultHandler {
         public void onResult(TdApi.TLObject object) {
             Message message = new Message();
             message.obj = object;
-
+            Log.e(TAG, object.toString());
             try {
                 Log.e(TAG, "BigFatHandler.onResult");
                 fromMessanger.send(message);
