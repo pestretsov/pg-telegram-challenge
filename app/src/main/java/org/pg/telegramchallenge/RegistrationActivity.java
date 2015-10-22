@@ -15,12 +15,12 @@ import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TdApi;
 
-public class RegistrationActivity extends AppCompatActivity implements BigFatLogic.OnAuth, FragmentHandler {
+public class RegistrationActivity extends AppCompatActivity implements BigFatLogic.Observer, FragmentHandler, BigFatLogic.OnNewMessage {
 
     private static final String TAG = RegistrationActivity.class.getSimpleName();
 
-    private Handler mHandler = new ActivityHandler();
-    private Messenger mMessenger = new Messenger(mHandler);
+//    private Handler mHandler = new ActivityHandler();
+//    private Messenger mMessenger = new Messenger(mHandler);
 
     FragmentManager mFragmentManager = getFragmentManager();
 
@@ -40,14 +40,14 @@ public class RegistrationActivity extends AppCompatActivity implements BigFatLog
 
     @Override
     public void replaceFragmentFromTLObject(TdApi.TLObject tlObject) {
-        try {
-            Message message = Message.obtain();
-            message.obj = tlObject;
-            message.replyTo = mMessenger;
-            BigFatLogic.mMessenger.send(message);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Message message = Message.obtain();
+//            message.obj = tlObject;
+//            message.replyTo = mMessenger;
+//            BigFatLogic.mMessenger.send(message);
+//        } catch (RemoteException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
@@ -55,34 +55,60 @@ public class RegistrationActivity extends AppCompatActivity implements BigFatLog
         // TODO: MANAGE THIS
     }
 
-    private class ActivityHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            Log.e(TAG, "handleMessage");
+    @Override
+    public void result(Object obj) {
+        if (!(obj instanceof TdApi.TLObject)) {
+            return;
+        }
 
-            // something went wrong
-            if (!(msg.obj instanceof TdApi.TLObject)) {
-                return;
-            }
+        Log.e(TAG, "RESULT");
 
-            switch (((TdApi.TLObject) msg.obj).getConstructor()) {
-                case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
-                    replaceFragment(AuthFragment.class);
-                    break;
-                case TdApi.AuthStateWaitCode.CONSTRUCTOR:
-                    replaceFragment(EnterCodeFragment.class);
-                    break;
-                case TdApi.AuthStateOk.CONSTRUCTOR:
-                    replaceFragment(DialogListFragment.class);
-                    break;
-                case TdApi.Error.CONSTRUCTOR:
-                    Log.e(TAG, "ERROR");
-                default:
-                    Log.e(TAG, "NOT HANDELED YET");
-                    break;
-            }
+        switch (((TdApi.TLObject) obj).getConstructor()) {
+            case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
+                replaceFragment(AuthFragment.class);
+                break;
+            case TdApi.AuthStateWaitCode.CONSTRUCTOR:
+                replaceFragment(EnterCodeFragment.class);
+                break;
+            case TdApi.AuthStateOk.CONSTRUCTOR:
+                replaceFragment(DialogListFragment.class);
+                break;
+            case TdApi.Error.CONSTRUCTOR:
+                Log.e(TAG, "ERROR");
+            default:
+                Log.e(TAG, "NOT HANDELED YET");
+                break;
         }
     }
+
+//    private class ActivityHandler extends Handler {
+//        @Override
+//        public void handleMessage(Message msg) {
+//            Log.e(TAG, "handleMessage");
+//
+//            // something went wrong
+//            if (!(msg.obj instanceof TdApi.TLObject)) {
+//                return;
+//            }
+//
+//            switch (((TdApi.TLObject) msg.obj).getConstructor()) {
+//                case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
+//                    replaceFragment(AuthFragment.class);
+//                    break;
+//                case TdApi.AuthStateWaitCode.CONSTRUCTOR:
+//                    replaceFragment(EnterCodeFragment.class);
+//                    break;
+//                case TdApi.AuthStateOk.CONSTRUCTOR:
+//                    replaceFragment(DialogListFragment.class);
+//                    break;
+//                case TdApi.Error.CONSTRUCTOR:
+//                    Log.e(TAG, "ERROR");
+//                default:
+//                    Log.e(TAG, "NOT HANDELED YET");
+//                    break;
+//            }
+//        }
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,22 +117,26 @@ public class RegistrationActivity extends AppCompatActivity implements BigFatLog
 
         Log.e(TAG, "onCreate");
 
-        BigFatLogic.registerObservers(this);
+        BigFatLogic.registerObservers((BigFatLogic.OnAuthObserver) this);
+        BigFatLogic.registerObservers((BigFatLogic.OnNewMessage)this);
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-        Message message = new Message();
-        message.replyTo = mMessenger;
-        message.obj = new TdApi.GetAuthState();
+//        Message message = new Message();
+//        message.replyTo = mMessenger;
+//        message.obj = new TdApi.GetAuthState();
 
-        try {
-            BigFatLogic.mMessenger.send(message);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+        BigFatLogic.send(new TdApi.GetAuthState());
+
+//        try {
+//            BigFatLogic.mMessenger.send(message);
+//        } catch (RemoteException e) {
+//            e.printStackTrace();
+//        }
 
         Log.e(TAG, "onStart");
     }
