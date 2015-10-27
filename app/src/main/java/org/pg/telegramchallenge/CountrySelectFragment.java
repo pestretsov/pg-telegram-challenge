@@ -88,6 +88,8 @@ public class CountrySelectFragment extends Fragment {
                 fullnameCountryMap.put(country.fullName, country);
                 codeCountryMap.put(country.code, country);
             }
+
+            reader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

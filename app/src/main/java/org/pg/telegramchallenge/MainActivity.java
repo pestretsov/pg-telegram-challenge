@@ -3,6 +3,8 @@ package org.pg.telegramchallenge;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.NavUtils;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,13 +14,16 @@ import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TG;
 import org.drinkless.td.libcore.telegram.TdApi;
+import org.pg.telegramchallenge.service.HandlerService;
 
 import static org.pg.telegramchallenge.ObserverApplication.OnAuthObserver;
 
-public class MainActivity extends AppCompatActivity implements OnAuthObserver{
+public class MainActivity extends AppCompatActivity implements OnAuthObserver, ObserverApplication.OnErrorObserver{
 
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private FragmentTransaction fragmentTransaction = null;
+
+    private ActionBar actionBar = null;
 
     private Fragment getCurrentFragment() {
         return fragmentManager.findFragmentById(R.id.base_fragment);
@@ -29,7 +34,8 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-    }
+        actionBar = getSupportActionBar();
+}
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -55,6 +61,12 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
             }
         }
 
+        switch (id) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -63,7 +75,8 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
         super.onResume();
 
         ObserverApplication application = (ObserverApplication) getApplication();
-        application.addObserver((OnAuthObserver)this);
+
+        application.addObserver(this);
 
         application.sendRequest(new TdApi.GetAuthState());
     }
@@ -73,7 +86,10 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
         super.onPause();
 
         ObserverApplication application = (ObserverApplication) getApplication();
-        application.removeObserver((OnAuthObserver) this);
+        application.removeObserver(this);
+    }
+
+    private void replaceCurrentFragment(Class<EmptyFragment> fragmentClass) {
     }
 
     @Override
@@ -81,12 +97,14 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
 
         switch (obj.getConstructor()) {
             case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
+                actionBar.setTitle(R.string.phone_number_title);
+
                 fragmentTransaction = fragmentManager.beginTransaction();
 //                fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.newInstance());
 //                fragmentTransaction.commit();
 
                 try {
-                    fragmentTransaction.replace(R.id.base_fragment, CountrySelectFragment.class.newInstance());
+                    fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.class.newInstance());
                     fragmentTransaction.commit();
                 } catch (InstantiationException e) {
                     e.printStackTrace();
@@ -98,8 +116,10 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
 
             case TdApi.AuthStateWaitCode.CONSTRUCTOR:
 
+                actionBar.setTitle(R.string.activation_code_title);
                 fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.base_fragment, AuthCodeFragment.newInstance()).addToBackStack(null);
+                fragmentTransaction.replace(R.id.base_fragment, AuthCodeFragment.newInstance())
+                        .addToBackStack(AuthCodeFragment.class.getName());
                 fragmentTransaction.commit();
 
                 break;
@@ -110,7 +130,22 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
                 fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.base_fragment, EmptyFragment.newInstance());
                 fragmentTransaction.commit();
+
                 break;
+
+            case TdApi.AuthStateWaitName.CONSTRUCTOR:
+                fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.base_fragment, AuthNameFragment.newInstance())
+                        .addToBackStack(AuthNameFragment.class.getName());
+                fragmentTransaction.commit();
+
+            default:
+                Toast.makeText(MainActivity.this, obj.toString(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void proceed(TdApi.Error err) {
+        Toast.makeText(MainActivity.this, err.text, Toast.LENGTH_SHORT).show();
     }
 }
