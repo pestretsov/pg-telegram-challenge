@@ -3,13 +3,26 @@
     android:layout_height="match_parent" tools:context="org.pg.telegramchallenge.AuthCodeFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <EditText
+    <TextView
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:id="@+id/auth_code_full_hint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:text="@string/auth_code_full_hint"
+        style="@style/TelegramAuthHintTextStye"/>
+    <EditText
+        style="@style/TelegramDefaultTextStyle"
+        android:layout_marginTop="5dp"
+        android:paddingLeft="0dp"
+        android:paddingBottom="15dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/auth_code_full_hint"
+        android:layout_alignParentLeft="true"
+        android:hint="@string/auth_code_hint"
         android:inputType="numberDecimal"
-        android:ems="10"
+        android:ems="6"
         android:id="@+id/passCode"/>
 
 

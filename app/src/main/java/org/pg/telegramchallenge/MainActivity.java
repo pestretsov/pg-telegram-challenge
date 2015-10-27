@@ -3,6 +3,8 @@ package org.pg.telegramchallenge;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.NavUtils;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +23,8 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private FragmentTransaction fragmentTransaction = null;
 
+    private ActionBar actionBar = null;
+
     private Fragment getCurrentFragment() {
         return fragmentManager.findFragmentById(R.id.base_fragment);
     }
@@ -29,6 +33,8 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        actionBar = getSupportActionBar();
 }
 
     @Override
@@ -55,6 +61,12 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
             }
         }
 
+        switch (id) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -77,11 +89,16 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
         application.removeObserver(this);
     }
 
+    private void replaceCurrentFragment(Class<EmptyFragment> fragmentClass) {
+    }
+
     @Override
     public void proceed(TdApi.AuthState obj) {
 
         switch (obj.getConstructor()) {
             case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
+                actionBar.setTitle(R.string.phone_number_title);
+
                 fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.newInstance());
                 fragmentTransaction.commit();
@@ -89,8 +106,11 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
 
             case TdApi.AuthStateWaitCode.CONSTRUCTOR:
 
+                actionBar.setTitle(R.string.activation_code_title);
+
                 fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.base_fragment, AuthCodeFragment.newInstance()).addToBackStack(null);
+                fragmentTransaction.replace(R.id.base_fragment, AuthCodeFragment.newInstance())
+                        .addToBackStack(AuthCodeFragment.class.getName());
                 fragmentTransaction.commit();
 
                 break;
@@ -98,14 +118,20 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
             case TdApi.AuthStateOk.CONSTRUCTOR:
                 fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
 
-                if (getCurrentFragment() instanceof EmptyFragment)
-                    break;
-
                 fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.base_fragment, EmptyFragment.newInstance());
                 fragmentTransaction.commit();
 
                 break;
+
+            case TdApi.AuthStateWaitName.CONSTRUCTOR:
+                fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.base_fragment, AuthNameFragment.newInstance())
+                        .addToBackStack(AuthNameFragment.class.getName());
+                fragmentTransaction.commit();
+
+            default:
+                Toast.makeText(MainActivity.this, obj.toString(), Toast.LENGTH_SHORT).show();
         }
     }
 

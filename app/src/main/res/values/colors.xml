@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_telegram_blue">#5b95c2</color>
+
+    <!-- those taken with Gpick, not from doc-->
+    <color name="accent_telegram_blue">#5AAAE0</color>
+    <color name="default_telegram_grey">#E5E5E5</color>
+
+    <color name="test_color">#b2b2b2</color>
+</resources>

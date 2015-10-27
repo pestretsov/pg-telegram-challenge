@@ -1,8 +1,28 @@
 <resources>
 
+    <style name="TelegramActionBar" parent="Base.Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="TelegramAuthHintTextStye">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColorPrimary">#999999</item>
+    </style>
+
+    <style name="TelegramDefaultTextStyle">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColorPrimary">#333333</item>
+    </style>
+
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <style name="TelegramTheme" parent="Theme.AppCompat.Light.DarkActionBar" >
+        <item name="colorPrimary">@color/primary_telegram_blue</item>
+
+        <item name="colorControlNormal">@color/default_telegram_grey</item>
+        <item name="colorControlActivated">@color/accent_telegram_blue</item>
+        <item name="android:actionBarStyle">@style/TelegramActionBar</item>
+
+        <item name="android:textColorHint">@color/test_color</item>
     </style>
 
 </resources>

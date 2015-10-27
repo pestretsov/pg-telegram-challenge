@@ -28,7 +28,7 @@ public class HandlerService extends Service implements Client.ResultHandler {
     public void onCreate() {
         super.onCreate();
 
-        final String dir = Environment.getExternalStorageDirectory().getAbsolutePath()
+        final String dir = getExternalFilesDir(null).getAbsolutePath()
                 + File.separator
                 + getString(R.string.db_folder_name);
 
