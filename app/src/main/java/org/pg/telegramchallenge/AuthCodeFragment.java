@@ -16,7 +16,6 @@ import org.drinkless.td.libcore.telegram.TdApi;
  */
 public class AuthCodeFragment extends Fragment implements Acceptable, ObserverApplication.OnErrorObserver{
 
-
     private EditText passCode;
 
     public ObserverApplication getApplication(){

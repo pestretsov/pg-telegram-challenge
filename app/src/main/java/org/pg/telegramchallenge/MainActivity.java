@@ -82,12 +82,21 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver{
         switch (obj.getConstructor()) {
             case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
                 fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.newInstance());
-                fragmentTransaction.commit();
+//                fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.newInstance());
+//                fragmentTransaction.commit();
+
+                try {
+                    fragmentTransaction.replace(R.id.base_fragment, CountrySelectFragment.class.newInstance());
+                    fragmentTransaction.commit();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+
                 break;
 
             case TdApi.AuthStateWaitCode.CONSTRUCTOR:
-
 
                 fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.base_fragment, AuthCodeFragment.newInstance()).addToBackStack(null);

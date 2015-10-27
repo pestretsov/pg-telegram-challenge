@@ -1,6 +1,7 @@
 package org.pg.telegramchallenge;
 
 import android.app.Application;
+import android.content.Context;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
@@ -19,6 +20,9 @@ import java.util.Map;
  * Created by roman on 22.10.15.
  */
 public class ObserverApplication extends Application implements Client.ResultHandler {
+
+    public static volatile Context appContext;
+
     static {
         try {
             System.loadLibrary("tdjni");
@@ -36,6 +40,8 @@ public class ObserverApplication extends Application implements Client.ResultHan
         String dir = Environment.getExternalStorageDirectory().getAbsolutePath()
                 + File.separator
                 + getString(R.string.db_folder_name);
+
+        appContext = getApplicationContext();
 
         File dirFile = new File(dir);
         if (!dirFile.exists()){

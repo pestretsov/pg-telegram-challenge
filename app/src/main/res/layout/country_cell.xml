@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="50dp">
+    android:layout_height="60dp"
+    app:slm_headerDisplay="start|sticky"
+    app:slm_isHeader="false"
+    app:slm_section_headerMarginStart="60dip"
+    app:slm_section_sectionManager="linear"
+    >
 
+<TextView
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:textSize="16sp"
+    android:id="@+id/country_full_name" />
 
     <TextView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/country_full_name" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-
-        android:layout_toEndOf="@id/country_full_name"
-        android:layout_toRightOf="@id/country_full_name"
-
-        android:id="@+id/country_code"
-        android:layout_gravity="end"/>
-
-</RelativeLayout>
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:paddingRight="26dp"
+        android:id="@+id/country_code" />
+</LinearLayout>
