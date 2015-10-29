@@ -9,23 +9,40 @@
 
     <!-- TODO: Update blank fragment layout -->
     <EditText
-        android:layout_width="wrap_content"
+        android:id="@+id/auth_country_name"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="numberDecimal"
-
-        android:ems="10"
-        android:id="@+id/country_code"
-        android:layout_toLeftOf="@+id/phone_number"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"/>
-
+        android:hint="@string/auth_country_hint"
+        android:clickable="false"
+        android:longClickable="false"
+        android:focusableInTouchMode="false"
+        android:focusable="false"
+        android:cursorVisible="false"/>
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:inputType="numberDecimal"
-        android:ems="10"
-        android:id="@id/phone_number"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
+        android:ems="4"
+        android:id="@+id/country_code"
+        android:layout_below="@id/auth_country_name"
+        android:layout_alignParentLeft="true"/>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:layout_below="@+id/auth_country_name"
+        android:layout_toRightOf="@id/country_code"
+        android:layout_toEndOf="@id/country_code"
+
+        android:inputType="numberDecimal"
+        android:id="@+id/phone_number"
+        android:hint="@string/auth_phone_number_hint"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/country_code"
+        style="@style/TelegramAuthHintTextStye"
+        android:text="@string/auth_phone_number_full_hint"/>
 </RelativeLayout>

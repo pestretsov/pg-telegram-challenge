@@ -9,9 +9,25 @@
     tools:context="org.pg.telegramchallenge.AuthNameFragment">
 
     <!-- TODO: Update blank fragment layout -->
+
     <EditText
-        android:layout_width="wrap_content"
+        android:id="@+id/first_name"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textShortMessage"/>
+        android:inputType="text"
+        android:hint="@string/auth_first_name_hint"/>
+
+    <EditText
+        android:id="@+id/second_name"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/first_name"
+        android:inputType="text"
+        android:hint="@string/auth_second_name_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </RelativeLayout>

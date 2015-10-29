@@ -4,6 +4,10 @@ package org.pg.telegramchallenge;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.AppCompatButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -21,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,9 +37,19 @@ public class CountrySelectFragment extends Fragment {
     private RecyclerView countriesListView;
     private static Map<String ,Country> fullnameCountryMap = new HashMap<>();
     private static Map<String, Country> codeCountryMap = new HashMap<>();
+    private ActionBar actionBar;
 
     public CountrySelectFragment() {
         // Required empty public constructor
+    }
+
+    public static CountrySelectFragment newInstance() {
+
+        Bundle args = new Bundle();
+
+        CountrySelectFragment fragment = new CountrySelectFragment();
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -44,7 +59,10 @@ public class CountrySelectFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_country_select, container, false);
 
-        parseCountries();
+        if (codeCountryMap.isEmpty())
+            parseCountries();
+
+        actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
 
         countriesListView = (RecyclerView)view.findViewById(R.id.countries_recycler_view);
         countriesListView.setLayoutManager(new LayoutManager(getContext()));
@@ -52,8 +70,15 @@ public class CountrySelectFragment extends Fragment {
             @Override
             public void click(Country country) {
                 Log.e(TAG, country.getFullName());
-                // TODO:
-                // write code to pass country name/code to the right field
+
+                FragmentManager fm = getFragmentManager();
+                List<Fragment> fragments = fm.getFragments();
+
+                // not really good solution
+                AuthPhoneNumberFragment phoneNumberFragment = (AuthPhoneNumberFragment) fragments.get(0);
+
+                phoneNumberFragment.setCountry(country);
+                fm.popBackStack();
             }
         }));
 
@@ -65,7 +90,29 @@ public class CountrySelectFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
     }
 
-    public void parseCountries() {
+    @Override
+    public void onResume() {
+        super.onResume();
+        actionBar.setTitle(R.string.auth_country);
+        View viewById = getActivity().findViewById(R.id.action_accept);
+        if (viewById!=null) {
+            viewById.setVisibility(View.GONE);
+        }
+    }
+
+    public static Country getCountryByCode(String code){
+        if (codeCountryMap.isEmpty()){
+            parseCountries();
+        }
+
+        if (codeCountryMap.isEmpty()) {
+            return null;
+        }
+
+        return codeCountryMap.get(code);
+    }
+
+    static public void parseCountries() {
         try {
             InputStream stream = ObserverApplication.appContext.getResources().getAssets().open("countries.txt");
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
@@ -95,7 +142,7 @@ public class CountrySelectFragment extends Fragment {
         }
     }
 
-    public class Country {
+    static public class Country {
         private String shortName;
         private String fullName;
         private String code;

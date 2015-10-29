@@ -3,39 +3,41 @@ package org.pg.telegramchallenge;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import org.drinkless.td.libcore.telegram.TG;
 import org.drinkless.td.libcore.telegram.TdApi;
-import org.pg.telegramchallenge.service.HandlerService;
 
 import static org.pg.telegramchallenge.ObserverApplication.OnAuthObserver;
+import static org.pg.telegramchallenge.ObserverApplication.OnErrorObserver;
 
-public class MainActivity extends AppCompatActivity implements OnAuthObserver, ObserverApplication.OnErrorObserver{
+public class MainActivity extends AppCompatActivity implements OnAuthObserver, OnErrorObserver{
 
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private FragmentTransaction fragmentTransaction = null;
 
-    private ActionBar actionBar = null;
-
     private Fragment getCurrentFragment() {
         return fragmentManager.findFragmentById(R.id.base_fragment);
+    }
+
+    public void replaceFragment(Fragment f, boolean addToBackStack) {
+        fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.base_fragment, f);
+        if (addToBackStack) {
+            fragmentTransaction.addToBackStack(f.getClass().getName());
+        }
+        fragmentTransaction.commit();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        actionBar = getSupportActionBar();
-}
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -78,7 +80,8 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
 
         application.addObserver(this);
 
-        application.sendRequest(new TdApi.GetAuthState());
+        if (getCurrentFragment()==null)
+            application.sendRequest(new TdApi.GetAuthState());
     }
 
     @Override
@@ -97,47 +100,23 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
 
         switch (obj.getConstructor()) {
             case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
-                actionBar.setTitle(R.string.phone_number_title);
-
-                fragmentTransaction = fragmentManager.beginTransaction();
-//                fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.newInstance());
-//                fragmentTransaction.commit();
-
-                try {
-                    fragmentTransaction.replace(R.id.base_fragment, AuthPhoneNumberFragment.class.newInstance());
-                    fragmentTransaction.commit();
-                } catch (InstantiationException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-
+                if (getCurrentFragment() instanceof AuthPhoneNumberFragment)
+                    break;
+                replaceFragment(AuthPhoneNumberFragment.newInstance(), false);
                 break;
 
             case TdApi.AuthStateWaitCode.CONSTRUCTOR:
-
-                actionBar.setTitle(R.string.activation_code_title);
-                fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.base_fragment, AuthCodeFragment.newInstance())
-                        .addToBackStack(AuthCodeFragment.class.getName());
-                fragmentTransaction.commit();
-
+                replaceFragment(AuthCodeFragment.newInstance(), true);
                 break;
 
             case TdApi.AuthStateOk.CONSTRUCTOR:
                 fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-
-                fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.base_fragment, EmptyFragment.newInstance());
-                fragmentTransaction.commit();
-
+                replaceFragment(EmptyFragment.newInstance(), false);
                 break;
 
             case TdApi.AuthStateWaitName.CONSTRUCTOR:
-                fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.base_fragment, AuthNameFragment.newInstance())
-                        .addToBackStack(AuthNameFragment.class.getName());
-                fragmentTransaction.commit();
+                replaceFragment(AuthNameFragment.newInstance(), true);
+                break;
 
             default:
                 Toast.makeText(MainActivity.this, obj.toString(), Toast.LENGTH_SHORT).show();

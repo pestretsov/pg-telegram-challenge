@@ -6,8 +6,15 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="phone_number_title">Phone number</string>
-    <string name="activation_code_title">Activation code</string>
+    <string name="auth_phone_number_title">Phone number</string>
+    <string name="auth_activation_code_title">Activation code</string>
+    <string name="auth_phone_number_full_hint">We will send and SMS with a confirmation code to your phone number.</string>
     <string name="auth_code_full_hint">We\'ve sent an SMS with an activation code to your phone number </string>
     <string name="auth_code_hint">Code</string>
+    <string name="auth_phone_number_hint">Phone number</string>
+    <string name="auth_country_hint">Country</string>
+    <string name="auth_name_title">Your name</string>
+    <string name="auth_country">Country</string>
+    <string name="auth_first_name_hint">First name</string>
+    <string name="auth_second_name_hint">Last name (optional)</string>
 </resources>
