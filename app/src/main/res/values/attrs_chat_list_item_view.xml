@@ -1,0 +1,12 @@
+<resources>
+    <declare-styleable name="ChatListItemView">
+        <attr name="android:background"/>
+        <attr name="android:textSize"/>
+        <attr name="titleTextSize" format="dimension"/>
+        <attr name="android:text"/>
+        <attr name="android:textColor"/>
+        <attr name="titleText" format="string"/>
+        <attr name="titleTextColor"/>
+        <attr name="avatarColor" format="color"/>
+    </declare-styleable>
+</resources>
