@@ -5,7 +5,10 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -17,6 +20,12 @@ import java.util.Locale;
 
 public class ChatListItemView extends View {
 
+    private static final String TAG = ChatListItemView.class.getSimpleName();
+    private Paint mCounterTextPaint;
+
+    public ChatStatus getStatus() {
+        return mStatus;
+    }
     //TODO i guess we should write a method with whole TdApi.Chat as argument
 
     public static enum ChatStatus{
@@ -25,6 +34,7 @@ public class ChatListItemView extends View {
 
     private int mLineColor;
     private int mTextColor, mTitleTextColor, avatarColor;
+    private int mCounterTextColor;
 
     // it's not finally defined yet!
     private final int dpAvatarSize = 30;
@@ -32,17 +42,23 @@ public class ChatListItemView extends View {
 
     private float mTextHeight;
     private float mTitleTextHeight;
+    private float mCounterTextHeight;
 
     private Paint linePaint, mTextPaint;
     private Paint mTitleTextPaint;
     private Paint mInitialsTextPaint;
     private Paint avatarPaint;
+    private Paint counterPaint;
 
     private String mText, mTitleText;
     private Date mDate;
 
-    private int unread;
-    private ChatStatus status;
+    private int unread = 0;
+    private ChatStatus mStatus = ChatStatus.DELIVERING;
+
+    Drawable clockIcon, bageIcon;
+    private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
+    private final int mCounterColor;
 
 
     private static final SimpleDateFormat localeDateFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
@@ -54,17 +70,23 @@ public class ChatListItemView extends View {
                 R.styleable.ChatListItemView);
 
         try {
+            clockIcon = attributes.getDrawable(R.styleable.ChatListItemView_myDrawable);
 //            mLineColor = attributes.getColor(R.styleable.BaseView_android_background, Color.WHITE);
             mLineColor = Color.BLUE;
             avatarColor =  attributes.getColor(R.styleable.ChatListItemView_avatarColor, Color.MAGENTA);
             mTextColor = attributes.getColor(R.styleable.ChatListItemView_android_textColor, Color.BLACK);
             mTitleTextColor = attributes.getColor(R.styleable.ChatListItemView_titleTextColor, Color.BLACK);
 
+            mCounterColor = attributes.getColor(R.styleable.ChatListItemView_counterColor, Color.GREEN);
+            mCounterTextHeight = attributes.getDimension(R.styleable.ChatListItemView_counterTextSize, 0.0f);
+            mCounterTextColor = attributes.getColor(R.styleable.ChatListItemView_counterTextColor, Color.WHITE);
+
             mTextHeight = attributes.getDimension(R.styleable.ChatListItemView_android_textSize, 0.0f);
             mTitleTextHeight = attributes.getDimension(R.styleable.ChatListItemView_titleTextSize, 0.0f);
 
             mText = attributes.getString(R.styleable.ChatListItemView_android_text);
             mTitleText = attributes.getString(R.styleable.ChatListItemView_titleText);
+
         } finally {
             attributes.recycle();
         }
@@ -89,6 +111,10 @@ public class ChatListItemView extends View {
     protected void init(){
         // size of avatar letters / avatar radius
         float avatarRatio = 2f/3;
+
+        clockIcon = getResources().getDrawable(R.drawable.ic_clock);
+        bageIcon = getResources().getDrawable(R.drawable.ic_badge);
+        bageIcon.setColorFilter(bageColor, PorterDuff.Mode.SRC_ATOP);
 
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setColor(mTextColor);
@@ -120,6 +146,16 @@ public class ChatListItemView extends View {
         avatarPaint.setStyle(Paint.Style.FILL);
         avatarPaint.setColor(avatarColor);
         avatarPaint.setAntiAlias(true);
+
+        counterPaint = new Paint();
+        counterPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+//        counterPaint.setStrokeWidth(0);
+        counterPaint.setColor(mCounterColor);
+        counterPaint.setAntiAlias(true);
+
+        mCounterTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mCounterTextPaint.setTextSize(mCounterTextHeight);
+        mCounterTextPaint.setColor(mCounterTextColor);
     }
 
     private float pxFromDp(float dp, Context context) {
@@ -154,8 +190,8 @@ public class ChatListItemView extends View {
                 avatarImageRadius,
                 avatarPaint);
         canvas.drawText(initials,
-                left + avatarImageRadius - mInitialsTextPaint.measureText(initials)/2,
-                top + avatarImageRadius + (bounds.bottom - bounds.top)/2,
+                left + avatarImageRadius - mInitialsTextPaint.measureText(initials) / 2,
+                top + avatarImageRadius + (bounds.bottom - bounds.top) / 2,
                 mInitialsTextPaint);
 
         canvas.drawText(mText, left + avatarImageRadius*2, top + mTextHeight + mTitleTextHeight + betweenText * 2, mTextPaint);
@@ -163,6 +199,69 @@ public class ChatListItemView extends View {
 
         canvas.drawText(displayedTime, right - mTextPaint.measureText(displayedTime), top + mTextHeight + betweenText, mTextPaint);
 
+        Drawable statusDrawable = null;
+        switch (mStatus) {
+            case UNREAD:
+                statusDrawable = bageIcon;
+                break;
+            case DELIVERING:
+                statusDrawable = clockIcon;
+                break;
+        }
+
+        if (statusDrawable!=null) {
+            mTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
+
+            // drawable would be as height as text
+            // bounds are NOT equal to textHeight!
+            int textBound = bounds.bottom - bounds.top;
+
+            statusDrawable.setBounds((int) (right - mTextPaint.measureText(displayedTime) - textBound),
+                    (int) (top + betweenText + mTextHeight - textBound),
+                    (int) (right - mTextPaint.measureText(displayedTime)),
+                    (int) (top + betweenText + mTextHeight)
+            );
+
+            statusDrawable.draw(canvas);
+        }
+
+        if (unread!=0) {
+            String unreadString = Integer.toString(unread);
+            mCounterTextPaint.getTextBounds("0", 0, 1, bounds);
+            int digitBounds = bounds.bottom - bounds.top;
+
+            float radius = (mCounterTextHeight);
+            float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left);
+
+            float cx, cy;
+            cx = right - radius;
+            cy = top + betweenText + mTextHeight + radius;
+
+            cy+=pxFromDp(5, getContext());
+
+            canvas.drawCircle(cx - rectLength,
+                    cy,
+                    radius,
+                    counterPaint
+            );
+
+            canvas.drawCircle(cx,
+                    cy,
+                    radius,
+                    counterPaint
+            );
+
+            canvas.drawRect(cx - rectLength,
+                    cy - radius,
+                    cx,
+                    cy + radius,
+                    counterPaint);
+
+            canvas.drawText(unreadString,
+                    cx - rectLength/2 - mCounterTextPaint.measureText(unreadString)/2,
+                    cy + digitBounds/2,
+                    mCounterTextPaint);
+        }
     }
 
     public void setTitle(String s){
@@ -199,13 +298,14 @@ public class ChatListItemView extends View {
     }
 
     /**
-     * displays little status icon left to the time
+     * displays little mStatus icon left to the time
      *
      * @param status
      *
      */
     public void setStatus(ChatStatus status){
-        //TODO implement status icon
+        mStatus = status;
+        invalidate();
     }
 
     protected String getInitials(String s){
