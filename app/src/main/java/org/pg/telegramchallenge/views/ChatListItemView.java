@@ -36,20 +36,26 @@ public class ChatListItemView extends View {
     private int mTextColor, mTitleTextColor, avatarColor;
     private int mCounterTextColor;
 
+    //paddings in dp
+    int mTextPadding = 16; // padding between avatar and text
+    int mStatusPadding = 8; // padding between status drawable and time text
+
     // it's not finally defined yet!
-    private final int dpAvatarSize = 30;
-    private int avatarImageRadius = (int) pxFromDp(dpAvatarSize, getContext());
+    private final int dpAvatarRadius = 20;
+    private int avatarImageRadius = (int) dpToPx(dpAvatarRadius, getContext());
 
     private float mTextHeight;
     private float mTitleTextHeight;
     private float mCounterTextHeight;
+    private float mTimeTextHeight;
 
-    private Paint linePaint, mTextPaint;
+    private Paint linePaint, mTextPaint, mTimeTextPaint;
     private Paint mTitleTextPaint;
     private Paint mInitialsTextPaint;
     private Paint avatarPaint;
     private Paint counterPaint;
 
+    // mText is for message text, mTitleText is for name
     private String mText, mTitleText;
     private Date mDate;
 
@@ -59,7 +65,6 @@ public class ChatListItemView extends View {
     Drawable clockIcon, bageIcon;
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
     private final int mCounterColor;
-
 
     private static final SimpleDateFormat localeDateFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
     private final Rect bounds = new Rect();
@@ -83,6 +88,7 @@ public class ChatListItemView extends View {
 
             mTextHeight = attributes.getDimension(R.styleable.ChatListItemView_android_textSize, 0.0f);
             mTitleTextHeight = attributes.getDimension(R.styleable.ChatListItemView_titleTextSize, 0.0f);
+            mTimeTextHeight = attributes.getDimension(R.styleable.ChatListItemView_timeTextSize, 0.0f);
 
             mText = attributes.getString(R.styleable.ChatListItemView_android_text);
             mTitleText = attributes.getString(R.styleable.ChatListItemView_titleText);
@@ -101,16 +107,16 @@ public class ChatListItemView extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         int width = getMeasuredWidth();
-        int height = Math.max(avatarImageRadius*2, Math.round(mTextHeight + mTitleTextHeight));
+        int heightWithoutPadding = dpToPx(40f, getContext());
         int widthWithoutPadding = width - getPaddingLeft() - getPaddingRight();
 
         setMeasuredDimension(widthWithoutPadding + getPaddingLeft() + getPaddingRight(),
-                height + getPaddingTop() + getPaddingBottom());
+                heightWithoutPadding + getPaddingTop() + getPaddingBottom());
     }
 
     protected void init(){
         // size of avatar letters / avatar radius
-        float avatarRatio = 2f/3;
+        float avatarRatio = 1;
 
         clockIcon = getResources().getDrawable(R.drawable.ic_clock);
         bageIcon = getResources().getDrawable(R.drawable.ic_badge);
@@ -123,6 +129,9 @@ public class ChatListItemView extends View {
         } else {
             mTextPaint.setTextSize(mTextHeight);
         }
+
+        mTimeTextPaint = new Paint(mTextPaint);
+        mTimeTextPaint.setTextSize(mTimeTextHeight);
 
         mTitleTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTitleTextPaint.setColor(mTitleTextColor);
@@ -158,8 +167,8 @@ public class ChatListItemView extends View {
         mCounterTextPaint.setColor(mCounterTextColor);
     }
 
-    private float pxFromDp(float dp, Context context) {
-        return dp * context.getResources().getDisplayMetrics().density;
+    private int dpToPx(float dp, Context context) {
+        return (int)(dp * context.getResources().getDisplayMetrics().density+0.5f);
     }
 
     @Override
@@ -173,31 +182,33 @@ public class ChatListItemView extends View {
         int widthWithoutPadding = right - left;
         int heightWithoutPadding = bottom - top;
 
-        float betweenText = (float)(heightWithoutPadding - Math.round(mTextHeight + mTitleTextHeight))/3;
+        float betweenText = 0;//(float)(heightWithoutPadding - Math.round(mTextHeight + mTitleTextHeight))/6;
 
         String initials = getInitials(mTitleText);
         mInitialsTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
 
         String displayedTime = localeDateFormat.format(mDate);
 
-        // bounds just to see borders of view
-//        canvas.drawRect(left, top, right, bottom, linePaint);
-//        canvas.drawRect(left, top, left + avatarImageRadius * 2, bottom, linePaint);
-
         // drawing avatar
         canvas.drawCircle(left + avatarImageRadius,
-                top + avatarImageRadius,
+                (top + bottom)/2,
                 avatarImageRadius,
                 avatarPaint);
         canvas.drawText(initials,
                 left + avatarImageRadius - mInitialsTextPaint.measureText(initials) / 2,
-                top + avatarImageRadius + (bounds.bottom - bounds.top) / 2,
+                (top + bottom)/2 + (bounds.bottom - bounds.top) / 2,
                 mInitialsTextPaint);
 
-        canvas.drawText(mText, left + avatarImageRadius*2, top + mTextHeight + mTitleTextHeight + betweenText * 2, mTextPaint);
-        canvas.drawText(mTitleText, left + avatarImageRadius*2, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+        // title and main text should begin on same position
+        float textStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, getContext());
 
-        canvas.drawText(displayedTime, right - mTextPaint.measureText(displayedTime), top + mTextHeight + betweenText, mTextPaint);
+        canvas.drawText(mText, textStartX, bottom - betweenText, mTextPaint);
+        canvas.drawText(mTitleText, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+
+        canvas.drawText(displayedTime,
+                right - mTimeTextPaint.measureText(displayedTime),
+                top + mTimeTextPaint.getTextSize() + betweenText + (mTitleTextHeight-mTimeTextHeight),
+                mTimeTextPaint);
 
         Drawable statusDrawable = null;
         switch (mStatus) {
@@ -214,13 +225,17 @@ public class ChatListItemView extends View {
 
             // drawable would be as height as text
             // bounds are NOT equal to textHeight!
-            int textBound = bounds.bottom - bounds.top;
+            int statusDrawableSize = bounds.bottom - bounds.top;
 
-            statusDrawable.setBounds((int) (right - mTextPaint.measureText(displayedTime) - textBound),
-                    (int) (top + betweenText + mTextHeight - textBound),
-                    (int) (right - mTextPaint.measureText(displayedTime)),
-                    (int) (top + betweenText + mTextHeight)
-            );
+            int textLeft, textTop, textRight, textBottom;
+
+            textRight = (int) (right - mTimeTextPaint.measureText(displayedTime) - dpToPx(mStatusPadding, getContext()));
+            textLeft = textRight - statusDrawableSize;
+
+            textBottom = (int) (top + betweenText + mTitleTextHeight);
+            textTop = textBottom - statusDrawableSize;
+
+            statusDrawable.setBounds(textLeft, textTop, textRight, textBottom);
 
             statusDrawable.draw(canvas);
         }
@@ -230,14 +245,14 @@ public class ChatListItemView extends View {
             mCounterTextPaint.getTextBounds("0", 0, 1, bounds);
             int digitBounds = bounds.bottom - bounds.top;
 
-            float radius = (mCounterTextHeight);
+            float radius = (mCounterTextHeight) * 0.8f;
             float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left);
 
             float cx, cy;
             cx = right - radius;
-            cy = top + betweenText + mTextHeight + radius;
+            cy = bottom - betweenText - radius;
 
-            cy+=pxFromDp(5, getContext());
+            cy+= dpToPx(5, getContext());
 
             canvas.drawCircle(cx - rectLength,
                     cy,

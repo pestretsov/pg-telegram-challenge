@@ -20,6 +20,7 @@
         <item name="android:textColor">#8a8a8a</item>
         <item name="titleTextColor">#222222</item>
 
+        <item name="timeTextSize">14sp</item>
         <item name="counterTextSize">14sp</item>
         <item name="counterColor">#6ECE82</item>
         <item name="counterTextColor">#FFFFFF</item>

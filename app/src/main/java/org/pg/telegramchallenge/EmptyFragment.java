@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import org.pg.telegramchallenge.views.ChatListItemView;
 
 
 /**
@@ -33,7 +34,13 @@ public class EmptyFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        return inflater.inflate(R.layout.fragment_empty, container, false);
+        View view = inflater.inflate(R.layout.fragment_empty, container, false);
+
+        ChatListItemView itemView = (ChatListItemView) view.findViewById(R.id.sample_view);
+        itemView.setUnreadCount(1);
+        itemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
+
+        return view;
     }
 
 
