@@ -26,9 +26,8 @@ public class ChatListItemView extends View {
     public ChatStatus getStatus() {
         return mStatus;
     }
-    //TODO i guess we should write a method with whole TdApi.Chat as argument
 
-    public static enum ChatStatus{
+    public enum ChatStatus{
         DELIVERING, READ, UNREAD;
     }
 
@@ -221,18 +220,19 @@ public class ChatListItemView extends View {
         }
 
         if (statusDrawable!=null) {
-            mTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
+            mTimeTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
 
             // drawable would be as height as text
             // bounds are NOT equal to textHeight!
-            int statusDrawableSize = bounds.bottom - bounds.top;
+            int timeTextRealHight = bounds.bottom - bounds.top;
+            int statusDrawableSize = timeTextRealHight / ((mStatus==ChatStatus.UNREAD)?2:1);
 
             int textLeft, textTop, textRight, textBottom;
 
             textRight = (int) (right - mTimeTextPaint.measureText(displayedTime) - dpToPx(mStatusPadding, getContext()));
             textLeft = textRight - statusDrawableSize;
 
-            textBottom = (int) (top + betweenText + mTitleTextHeight);
+            textBottom = (int) (top + betweenText + mTitleTextHeight - timeTextRealHight/2f + statusDrawableSize/2f);
             textTop = textBottom - statusDrawableSize;
 
             statusDrawable.setBounds(textLeft, textTop, textRight, textBottom);
@@ -245,7 +245,7 @@ public class ChatListItemView extends View {
             mCounterTextPaint.getTextBounds("0", 0, 1, bounds);
             int digitBounds = bounds.bottom - bounds.top;
 
-            float radius = (mCounterTextHeight) * 0.8f;
+            float radius = (mCounterTextHeight) * 0.6f;
             float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left);
 
             float cx, cy;
@@ -307,7 +307,6 @@ public class ChatListItemView extends View {
      * if there is no unread messages, pass 0;
      */
     public void setUnreadCount(int unreadCount) {
-        // TODO implement count indicator
         unread = unreadCount;
         invalidate();
     }
