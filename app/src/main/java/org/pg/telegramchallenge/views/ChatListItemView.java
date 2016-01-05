@@ -5,8 +5,15 @@ import android.content.res.TypedArray;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.util.AttributeSet;
 import android.view.View;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
 import static org.pg.telegramchallenge.utils.Utils.*;
 
@@ -47,7 +54,8 @@ public class ChatListItemView extends View {
     private Paint linePaint, mTextPaint, mTimeTextPaint;
     private Paint mTitleTextPaint;
     private Paint mInitialsTextPaint;
-    private Paint avatarPaint;
+    private Paint avatarCirclePaint;
+    private Paint avatarImagePaint;
     private Paint counterPaint;
 
     // mText is for message text, mTitleText is for name
@@ -55,9 +63,11 @@ public class ChatListItemView extends View {
     private Date mDate;
 
     private int unread = 0;
-    private ChatStatus mStatus = ChatStatus.DELIVERING;
+    private ChatStatus mStatus = ChatStatus.READ;
+    private String avatarImageFilePath = null;
 
-    Drawable clockIcon, bageIcon;
+    private Drawable clockIcon, bageIcon;
+    private Drawable avatarDrawable = null;
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
     private final int mCounterColor;
 
@@ -147,10 +157,15 @@ public class ChatListItemView extends View {
         linePaint.setColor(mLineColor);
         linePaint.setAntiAlias(true);
 
-        avatarPaint = new Paint();
-        avatarPaint.setStyle(Paint.Style.FILL);
-        avatarPaint.setColor(avatarColor);
-        avatarPaint.setAntiAlias(true);
+        avatarCirclePaint = new Paint();
+        avatarCirclePaint.setStyle(Paint.Style.FILL);
+        avatarCirclePaint.setColor(avatarColor);
+        avatarCirclePaint.setAntiAlias(true);
+
+        avatarImagePaint = new Paint();
+        avatarImagePaint.setAntiAlias(true);
+        avatarImagePaint.setFilterBitmap(true);
+        avatarImagePaint.setDither(true);
 
         counterPaint = new Paint();
         counterPaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -164,32 +179,37 @@ public class ChatListItemView extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(final Canvas canvas) {
 
-        int left = getPaddingLeft();
-        int top = getPaddingTop();
-        int right = getWidth() - getPaddingRight();
-        int bottom = getHeight() - getPaddingBottom();
+        final int left = getPaddingLeft();
+        final int top = getPaddingTop();
+        final int right = getWidth() - getPaddingRight();
+        final int bottom = getHeight() - getPaddingBottom();
 
         int widthWithoutPadding = right - left;
         int heightWithoutPadding = bottom - top;
 
         float betweenText = 0;//(float)(heightWithoutPadding - Math.round(mTextHeight + mTitleTextHeight))/6;
 
-        String initials = getInitials(mTitleText);
+        final String initials = getInitials(mTitleText);
         mInitialsTextPaint.getTextBounds(initials, 0, initials.length(), bounds);
 
         String displayedTime = localeDateFormat.format(mDate);
 
         // drawing avatar
-        canvas.drawCircle(left + avatarImageRadius,
-                (top + bottom)/2,
-                avatarImageRadius,
-                avatarPaint);
-        canvas.drawText(initials,
-                left + avatarImageRadius - mInitialsTextPaint.measureText(initials) / 2,
-                (top + bottom)/2 + (bounds.bottom - bounds.top) / 2,
-                mInitialsTextPaint);
+        if (avatarDrawable == null) {
+            canvas.drawCircle(left + avatarImageRadius,
+                    (top + bottom) / 2,
+                    avatarImageRadius,
+                    avatarCirclePaint);
+            canvas.drawText(initials,
+                    left + avatarImageRadius - mInitialsTextPaint.measureText(initials) / 2,
+                    (top + bottom) / 2 + (bounds.bottom - bounds.top) / 2,
+                    mInitialsTextPaint);
+        } else {
+            avatarDrawable.setBounds(left, top, left + avatarImageRadius*2, top + avatarImageRadius*2);
+            avatarDrawable.draw(canvas);
+        }
 
         // title and main text should begin on same position
         float textStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, getContext());
@@ -307,8 +327,25 @@ public class ChatListItemView extends View {
 
     public void setAvatarColor(int color) {
         avatarColor = color;
-        avatarPaint.setColor(avatarColor);
+        avatarCirclePaint.setColor(avatarColor);
         invalidate();
+    }
+
+    public void setAvatarFilePath(String path){
+        avatarImageFilePath = path;
+        Glide.with(getContext())
+                .load(avatarImageFilePath)
+                .asBitmap()
+                .into(new ViewTarget<ChatListItemView, Bitmap>(this) {
+
+                    @Override
+                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                        RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
+                        roundedBitmapDrawable.setCircular(true);
+                        avatarDrawable = roundedBitmapDrawable;
+                        invalidate();
+                    }
+                });
     }
 
     /**
