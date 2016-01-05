@@ -2,17 +2,13 @@ package org.pg.telegramchallenge.views;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.Rect;
+import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.View;
-
 import org.pg.telegramchallenge.R;
+import static org.pg.telegramchallenge.utils.Utils.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,7 +37,7 @@ public class ChatListItemView extends View {
 
     // it's not finally defined yet!
     private final int dpAvatarRadius = 20;
-    private int avatarImageRadius = (int) dpToPx(dpAvatarRadius, getContext());
+    private int avatarImageRadius = dpToPx(dpAvatarRadius, getContext());
 
     private float mTextHeight;
     private float mTitleTextHeight;
@@ -89,8 +85,9 @@ public class ChatListItemView extends View {
             mTitleTextHeight = attributes.getDimension(R.styleable.ChatListItemView_titleTextSize, 0.0f);
             mTimeTextHeight = attributes.getDimension(R.styleable.ChatListItemView_timeTextSize, 0.0f);
 
-            mText = attributes.getString(R.styleable.ChatListItemView_android_text);
-            mTitleText = attributes.getString(R.styleable.ChatListItemView_titleText);
+
+            mText = getOrElse(attributes.getString(R.styleable.ChatListItemView_android_text), "");
+            mTitleText = getOrElse(attributes.getString(R.styleable.ChatListItemView_titleText), "");
 
         } finally {
             attributes.recycle();
@@ -166,10 +163,6 @@ public class ChatListItemView extends View {
         mCounterTextPaint.setColor(mCounterTextColor);
     }
 
-    private int dpToPx(float dp, Context context) {
-        return (int)(dp * context.getResources().getDisplayMetrics().density+0.5f);
-    }
-
     @Override
     protected void onDraw(Canvas canvas) {
 
@@ -184,7 +177,7 @@ public class ChatListItemView extends View {
         float betweenText = 0;//(float)(heightWithoutPadding - Math.round(mTextHeight + mTitleTextHeight))/6;
 
         String initials = getInitials(mTitleText);
-        mInitialsTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
+        mInitialsTextPaint.getTextBounds(initials, 0, initials.length(), bounds);
 
         String displayedTime = localeDateFormat.format(mDate);
 
@@ -219,7 +212,7 @@ public class ChatListItemView extends View {
         }
 
         if (statusDrawable!=null) {
-            mTimeTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
+            mTimeTextPaint.getTextBounds("0", 0, 1, bounds);
 
             // drawable would be as height as text
             // bounds are NOT equal to textHeight!
@@ -341,10 +334,13 @@ public class ChatListItemView extends View {
     }
 
     protected String getInitials(String s){
+        if (s == null)
+            return "";
 
         StringBuilder initials = new StringBuilder();
         for (String a: s.split(" ")){
-            initials.append(a.charAt(0));
+            if (!a.isEmpty())
+                initials.append(a.charAt(0));
             if (initials.length()>=2)
                 break;
         }
