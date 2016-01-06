@@ -26,9 +26,8 @@ public class ChatListItemView extends View {
     public ChatStatus getStatus() {
         return mStatus;
     }
-    //TODO i guess we should write a method with whole TdApi.Chat as argument
 
-    public static enum ChatStatus{
+    public enum ChatStatus{
         DELIVERING, READ, UNREAD;
     }
 
@@ -66,7 +65,7 @@ public class ChatListItemView extends View {
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
     private final int mCounterColor;
 
-    private static final SimpleDateFormat localeDateFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+    private static final SimpleDateFormat localeDateFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
     private final Rect bounds = new Rect();
 
     public ChatListItemView(Context context, AttributeSet attrs) {
@@ -202,7 +201,6 @@ public class ChatListItemView extends View {
         // title and main text should begin on same position
         float textStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, getContext());
 
-        canvas.drawText(mText, textStartX, bottom - betweenText, mTextPaint);
         canvas.drawText(mTitleText, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
 
         canvas.drawText(displayedTime,
@@ -221,18 +219,19 @@ public class ChatListItemView extends View {
         }
 
         if (statusDrawable!=null) {
-            mTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
+            mTimeTextPaint.getTextBounds(initials, 0, initials.length() - 1, bounds);
 
             // drawable would be as height as text
             // bounds are NOT equal to textHeight!
-            int statusDrawableSize = bounds.bottom - bounds.top;
+            int timeTextRealHight = bounds.bottom - bounds.top;
+            int statusDrawableSize = timeTextRealHight / ((mStatus==ChatStatus.UNREAD)?2:1);
 
             int textLeft, textTop, textRight, textBottom;
 
             textRight = (int) (right - mTimeTextPaint.measureText(displayedTime) - dpToPx(mStatusPadding, getContext()));
             textLeft = textRight - statusDrawableSize;
 
-            textBottom = (int) (top + betweenText + mTitleTextHeight);
+            textBottom = (int) (top + betweenText + mTitleTextHeight - timeTextRealHight/2f + statusDrawableSize/2f);
             textTop = textBottom - statusDrawableSize;
 
             statusDrawable.setBounds(textLeft, textTop, textRight, textBottom);
@@ -240,19 +239,19 @@ public class ChatListItemView extends View {
             statusDrawable.draw(canvas);
         }
 
+        float textEndX;
+
         if (unread!=0) {
             String unreadString = Integer.toString(unread);
             mCounterTextPaint.getTextBounds("0", 0, 1, bounds);
             int digitBounds = bounds.bottom - bounds.top;
 
-            float radius = (mCounterTextHeight) * 0.8f;
-            float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left);
+            float radius = (mCounterTextHeight) * 0.7f;
+            float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left)*1.2f;
 
             float cx, cy;
             cx = right - radius;
-            cy = bottom - betweenText - radius;
-
-            cy+= dpToPx(5, getContext());
+            cy = bottom - betweenText - digitBounds/2;
 
             canvas.drawCircle(cx - rectLength,
                     cy,
@@ -266,6 +265,8 @@ public class ChatListItemView extends View {
                     counterPaint
             );
 
+            textEndX = cx - rectLength - radius - dpToPx(mTextPadding, getContext());
+
             canvas.drawRect(cx - rectLength,
                     cy - radius,
                     cx,
@@ -274,8 +275,25 @@ public class ChatListItemView extends View {
 
             canvas.drawText(unreadString,
                     cx - rectLength/2 - mCounterTextPaint.measureText(unreadString)/2,
-                    cy + digitBounds/2,
+//                    cy + digitBounds/2,
+                    bottom - betweenText,
                     mCounterTextPaint);
+        } else {
+            textEndX = right;
+        }
+
+        float textLength = mTextPaint.measureText(mText);
+        float maxTextLength = textEndX - textStartX;
+        if (textLength > maxTextLength) {
+            int pos = 0;
+            float dotsLenght = mTextPaint.measureText("...");
+            while (mTextPaint.measureText(mText, 0, pos+1)<(maxTextLength-dotsLenght)){
+                pos++;
+            }
+
+            canvas.drawText(mText.substring(0,pos).concat("..."), textStartX, bottom - betweenText, mTextPaint);
+        } else {
+            canvas.drawText(mText, textStartX, bottom - betweenText, mTextPaint);
         }
     }
 
@@ -307,7 +325,6 @@ public class ChatListItemView extends View {
      * if there is no unread messages, pass 0;
      */
     public void setUnreadCount(int unreadCount) {
-        // TODO implement count indicator
         unread = unreadCount;
         invalidate();
     }
