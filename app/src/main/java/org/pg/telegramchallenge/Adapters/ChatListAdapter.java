@@ -50,7 +50,10 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         String title = "";
         if (chatList[position].type instanceof TdApi.PrivateChatInfo) {
             // TODO: MAYBE NO LAST NAME
-            title = ((TdApi.PrivateChatInfo)chatList[position].type).user.firstName + " " + ((TdApi.PrivateChatInfo)chatList[position].type).user.lastName;
+            title = ((TdApi.PrivateChatInfo)chatList[position].type).user.firstName;
+            if (((TdApi.PrivateChatInfo)chatList[position].type).user.lastName.length() > 0) {
+                title += " " + ((TdApi.PrivateChatInfo)chatList[position].type).user.lastName;
+            }
         } else {
             title = ((TdApi.GroupChatInfo)chatList[position].type).groupChat.title;
         }
