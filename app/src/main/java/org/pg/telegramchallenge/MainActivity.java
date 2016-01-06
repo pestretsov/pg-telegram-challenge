@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements OnAuthObserver, O
 
             case TdApi.AuthStateOk.CONSTRUCTOR:
                 fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-                replaceFragment(EmptyFragment.newInstance(), false);
+                replaceFragment(ChatListFragment.newInstance(), false);
                 break;
 
             case TdApi.AuthStateWaitName.CONSTRUCTOR:

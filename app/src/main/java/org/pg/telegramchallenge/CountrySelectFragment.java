@@ -34,6 +34,7 @@ import java.util.Map;
 public class CountrySelectFragment extends Fragment {
     private static String TAG = CountrySelectFragment.class.getCanonicalName();
 
+    // TODO: RENAME
     private RecyclerView countriesListView;
     private static Map<String ,Country> fullnameCountryMap = new HashMap<>();
     private static Map<String, Country> codeCountryMap = new HashMap<>();

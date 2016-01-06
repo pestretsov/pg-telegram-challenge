@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.pg.telegramchallenge.views.ChatListItemView
+        android:id="@+id/chat_list_itemview"
+        style="@style/ChatListItemTextStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="mister president, are you fucking kidding me?"
+        android:padding="16dp"
+        />
+
+</LinearLayout>

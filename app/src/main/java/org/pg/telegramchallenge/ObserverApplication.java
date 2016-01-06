@@ -52,6 +52,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
 //        interfaces.add(OnErrorObserver.class);
 //    }
 
+
     private volatile List<OnErrorObserver> onErrorObservers = new LinkedList<>();
 
     public interface OnErrorObserver {
@@ -62,6 +63,50 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
     public interface OnAuthObserver {
         void proceed(TdApi.AuthState obj);
+    }
+
+    //Fragment should respond:
+//
+//    UpdateNewMessage - очевидно
+//    UpdateUserAction - "$username$ сейчас набирает"
+//    UpdateChatReadOutbox - флажки и цифры
+//    UpdateChatReadInbox - флажки и цифры
+//    UpdateChatTitle - очевидно
+
+    private volatile List<OnUpdateNewMessageObserver> onUpdateNewMessageObservers = new LinkedList<>();
+
+    public interface OnUpdateNewMessageObserver {
+        void proceed(TdApi.UpdateNewMessage obj);
+    }
+
+    private volatile List<OnUpdateUserActionObserver> onUpdateUserActionObservers = new LinkedList<>();
+
+    public interface OnUpdateUserActionObserver {
+        void proceed(TdApi.UpdateUserAction obj);
+    }
+
+    private volatile List<OnUpdateChatReadOutboxObserver> onUpdateChatReadOutboxObservers = new LinkedList<>();
+
+    public interface OnUpdateChatReadOutboxObserver {
+        void proceed(TdApi.UpdateChatReadOutbox obj);
+    }
+
+    private volatile List<OnUpdateChatReadInboxObserver> onUpdateChatReadInboxObservers = new LinkedList<>();
+
+    public interface OnUpdateChatReadInboxObserver {
+        void proceed(TdApi.UpdateChatReadInbox obj);
+    }
+
+    private volatile List<OnUpdateChatTitleObserver> onUpdateChatTitleObservers = new LinkedList<>();
+
+    public interface OnUpdateChatTitleObserver {
+        void proceed(TdApi.UpdateChatTitle obj);
+    }
+
+    private volatile List<ChatsObserver> chatsObservers = new LinkedList<>();
+
+    public interface ChatsObserver {
+        void proceed(TdApi.Chats obj);
     }
 
     /** for future
@@ -83,36 +128,87 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         if (obs instanceof OnErrorObserver)
             onErrorObservers.add((OnErrorObserver) obs);
+
+        if (obs instanceof OnUpdateNewMessageObserver) {
+            onUpdateNewMessageObservers.add((OnUpdateNewMessageObserver) obs);
+        }
+
+        if (obs instanceof OnUpdateUserActionObserver) {
+            onUpdateUserActionObservers.add((OnUpdateUserActionObserver) obs);
+        }
+
+        if (obs instanceof OnUpdateChatReadInboxObserver) {
+            onUpdateChatReadInboxObservers.add((OnUpdateChatReadInboxObserver) obs);
+        }
+
+        if (obs instanceof OnUpdateChatReadOutboxObserver) {
+            onUpdateChatReadOutboxObservers.add((OnUpdateChatReadOutboxObserver) obs);
+        }
+
+        if (obs instanceof OnUpdateChatTitleObserver) {
+            onUpdateChatTitleObservers.add((OnUpdateChatTitleObserver) obs);
+        }
+
+        if (obs instanceof ChatsObserver) {
+            chatsObservers.add((ChatsObserver) obs);
+        }
     }
 
     public void removeObserver(Object obs) {
-        if (obs instanceof OnAuthObserver)
+        if (obs instanceof OnAuthObserver) {
             onAuthObservers.remove(obs);
+        }
 
-        if (obs instanceof OnErrorObserver)
+        if (obs instanceof OnErrorObserver) {
             onErrorObservers.remove(obs);
+        }
+
+        if (obs instanceof OnUpdateNewMessageObserver) {
+            onUpdateNewMessageObservers.remove(obs);
+        }
+
+        if (obs instanceof OnUpdateUserActionObserver) {
+            onUpdateUserActionObservers.remove(obs);
+        }
+
+        if (obs instanceof OnUpdateChatReadInboxObserver) {
+            onUpdateChatReadInboxObservers.remove(obs);
+        }
+
+        if (obs instanceof OnUpdateChatReadOutboxObserver) {
+            onUpdateChatReadOutboxObservers.remove(obs);
+        }
+
+        if (obs instanceof OnUpdateChatTitleObserver) {
+            onUpdateChatTitleObservers.remove(obs);
+        }
+
+        if (obs instanceof ChatsObserver) {
+            chatsObservers.remove(obs);
+        }
     }
 
 
-    private List <TdApi.TLFunction> requestPull = new LinkedList<>();
+    private List <TdApi.TLFunction> requestPool = new LinkedList<>();
 
     public void sendRequest(TdApi.TLFunction request) {
+        Log.e(TAG, request.toString());
         if (TG.getClientInstance() == null) {
-            requestPull.add(request);
+            requestPool.add(request);
         } else {
             TG.getClientInstance().send(request, this);
         }
     }
 
-    public boolean invokeRequestPull() {
+    public boolean invokeRequestPool() {
         if (TG.getClientInstance() == null)
             return false;
 
-        for (TdApi.TLFunction function: requestPull) {
+        for (TdApi.TLFunction function: requestPool) {
             TG.getClientInstance().send(function, this);
         }
 
-        requestPull.clear();
+        requestPool.clear();
 
         return true;
     }
@@ -125,7 +221,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
         Log.i(TAG, object.toString());
     }
 
-    private class HandlerRunnable implements Runnable{
+    private class HandlerRunnable implements Runnable {
 
         final TdApi.TLObject object;
         public HandlerRunnable(TdApi.TLObject object){
@@ -134,17 +230,63 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         @Override
         public void run() {
-
+            Log.e(TAG+"CHECK_CALL", object.toString());
             if (object instanceof TdApi.AuthState) {
                 for (OnAuthObserver observer : onAuthObservers) {
                     observer.proceed((TdApi.AuthState) object);
                 }
+                return;
             }
 
             if (object instanceof TdApi.Error) {
                 for (OnErrorObserver observer : onErrorObservers) {
                     observer.proceed((TdApi.Error) object);
                 }
+                return;
+            }
+
+
+            if (object instanceof TdApi.UpdateNewMessage) {
+                for (OnUpdateNewMessageObserver observer : onUpdateNewMessageObservers) {
+                    observer.proceed((TdApi.UpdateNewMessage) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.UpdateUserAction) {
+                for (OnUpdateUserActionObserver observer : onUpdateUserActionObservers) {
+                    observer.proceed((TdApi.UpdateUserAction) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.UpdateChatReadInbox) {
+                for (OnUpdateChatReadInboxObserver observer : onUpdateChatReadInboxObservers) {
+                    observer.proceed((TdApi.UpdateChatReadInbox) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.UpdateChatReadOutbox) {
+                for (OnUpdateChatReadOutboxObserver observer : onUpdateChatReadOutboxObservers) {
+                    observer.proceed((TdApi.UpdateChatReadOutbox) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.UpdateChatTitle) {
+                for (OnUpdateChatTitleObserver observer : onUpdateChatTitleObservers) {
+                    observer.proceed((TdApi.UpdateChatTitle) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.Chats) {
+                Log.e(TAG, "CHATOBSERVESLOOP");
+                for (ChatsObserver observer : chatsObservers) {
+                    observer.proceed((TdApi.Chats) object);
+                }
+                return;
             }
         }
     }

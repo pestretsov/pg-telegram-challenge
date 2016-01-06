@@ -41,7 +41,7 @@ public class HandlerService extends Service implements Client.ResultHandler {
         TG.setUpdatesHandler(this);
 
         // when service is created, requests from pull can be invoked
-        ((ObserverApplication)getApplication()).invokeRequestPull();
+        ((ObserverApplication)getApplication()).invokeRequestPool();
 
         Toast.makeText(HandlerService.this, "Service is launched", Toast.LENGTH_SHORT).show();
     }
