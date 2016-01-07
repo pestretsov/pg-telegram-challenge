@@ -1,5 +1,6 @@
 package org.pg.telegramchallenge.Adapters;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.view.ViewGroup;
 
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.ChatListFragment;
+import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
@@ -17,6 +19,7 @@ import java.util.List;
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH> {
     private TdApi.Chat[] chatList;
+    private ObserverApplication context;
 
     public ChatListAdapter(TdApi.Chat[] chatList) {
         this.chatList = chatList;
@@ -26,6 +29,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     public ChatListVH onCreateViewHolder(ViewGroup parent, int viewType) {
 
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_list_cell, parent, false);
+        context = (ObserverApplication) parent.getContext().getApplicationContext();
 
         return new ChatListVH(view);
     }
@@ -33,6 +37,23 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     public void changeData(TdApi.Chat[] chatList) {
         this.chatList = chatList.clone();
         this.notifyDataSetChanged();
+    }
+
+    /**
+     *
+     * @param holder to load avatar into
+     * @param p which is need to be downloaded
+     * @return true if had started downloading
+     */
+    private boolean handleAvatar(ChatListVH holder, TdApi.ProfilePhoto p) {
+        if (!(p.small.path.isEmpty())) {
+            holder.chatListItemView.setAvatarFilePath((p.small.path));
+        } else if (p.small.id!=0) {
+            context.sendRequest(new TdApi.DownloadFile(p.small.id));
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -50,12 +71,25 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         String title = "";
         if (chatList[position].type instanceof TdApi.PrivateChatInfo) {
             // TODO: MAYBE NO LAST NAME
-            title = ((TdApi.PrivateChatInfo)chatList[position].type).user.firstName;
-            if (((TdApi.PrivateChatInfo)chatList[position].type).user.lastName.length() > 0) {
-                title += " " + ((TdApi.PrivateChatInfo)chatList[position].type).user.lastName;
+            TdApi.PrivateChatInfo privateChat = (TdApi.PrivateChatInfo) chatList[position].type;
+            title = privateChat.user.firstName;
+            if (privateChat.user.lastName.length() > 0) {
+                title += " " + privateChat.user.lastName;
             }
+
+            boolean avatarsAreDownloading = handleAvatar(holder, privateChat.user.profilePhoto);
+
+            if (avatarsAreDownloading) {
+                context.sendRequest(new TdApi.GetChats(0, 10));
+            }
+
         } else {
-            title = ((TdApi.GroupChatInfo)chatList[position].type).groupChat.title;
+            TdApi.GroupChat groupChat = ((TdApi.GroupChatInfo) chatList[position].type).groupChat;
+            title = groupChat.title;
+
+            if (handleAvatar(holder, groupChat.photo)) {
+                context.sendRequest(new TdApi.GetChats(0, 10));
+            }
         }
 
         holder.chatListItemView.setTitle(title);
