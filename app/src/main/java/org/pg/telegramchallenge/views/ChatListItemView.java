@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
 import com.bumptech.glide.Glide;
@@ -61,11 +62,13 @@ public class ChatListItemView extends View {
 
     // mText is for message text, mTitleText is for name
     private String mText, mTitleText;
+    private float[] mTextWidths;
     private Date mDate;
 
     private int unread = 0;
     private ChatStatus mStatus = ChatStatus.READ;
     private String avatarImageFilePath = null;
+    ViewTarget<ChatListItemView, Bitmap> glideTarget;
 
     private Drawable clockIcon, bageIcon;
     private Drawable avatarDrawable = null;
@@ -98,6 +101,7 @@ public class ChatListItemView extends View {
 
 
             mText = getOrElse(attributes.getString(R.styleable.ChatListItemView_android_text), "");
+            mTextWidths = new float[mText.length()];
             mTitleText = getOrElse(attributes.getString(R.styleable.ChatListItemView_titleText), "");
 
         } finally {
@@ -177,6 +181,16 @@ public class ChatListItemView extends View {
         mCounterTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mCounterTextPaint.setTextSize(mCounterTextHeight);
         mCounterTextPaint.setColor(mCounterTextColor);
+
+        glideTarget = new ViewTarget<ChatListItemView, Bitmap>(this) {
+            @Override
+            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
+                roundedBitmapDrawable.setCircular(true);
+                avatarDrawable = roundedBitmapDrawable;
+                view.invalidate();
+            }
+        };
     }
 
     @Override
@@ -296,12 +310,21 @@ public class ChatListItemView extends View {
             textEndX = right;
         }
 
-        float textLength = mTextPaint.measureText(mText);
+        mTextPaint.getTextWidths(mText, 0, mText.length(), mTextWidths);
+
+        float textLength = 0;
+        for (float f : mTextWidths) {
+            textLength += f;
+        }
+
         float maxTextLength = textEndX - textStartX;
         if (textLength > maxTextLength) {
             int pos = 0;
             float dotsLenght = mTextPaint.measureText("...");
-            while (mTextPaint.measureText(mText, 0, pos+1)<(maxTextLength-dotsLenght)){
+            textLength = 0;
+
+            while (textLength + mTextWidths[pos] < (maxTextLength-dotsLenght)){
+                textLength += mTextWidths[pos];
                 pos++;
             }
 
@@ -318,6 +341,7 @@ public class ChatListItemView extends View {
 
     public void setText(String s){
         mText = s;
+        mTextWidths = new float[mText.length()];
         invalidate();
     }
 
@@ -344,16 +368,8 @@ public class ChatListItemView extends View {
         Glide.with(getContext())
                 .load(avatarImageFilePath)
                 .asBitmap()
-                .into(new ViewTarget<ChatListItemView, Bitmap>(this) {
-
-                    @Override
-                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                        RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
-                        roundedBitmapDrawable.setCircular(true);
-                        avatarDrawable = roundedBitmapDrawable;
-                        invalidate();
-                    }
-                });
+                .fitCenter()
+                .into(glideTarget);
     }
 
     /**
