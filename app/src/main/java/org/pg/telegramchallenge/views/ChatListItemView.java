@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
@@ -331,8 +332,15 @@ public class ChatListItemView extends View {
         invalidate();
     }
 
-    public void setAvatarFilePath(String path){
+    public void setAvatarFilePath(@Nullable String path){
         avatarImageFilePath = path;
+
+        if (avatarImageFilePath == null) {
+            avatarDrawable = null;
+            invalidate();
+            return;
+        }
+
         Glide.with(getContext())
                 .load(avatarImageFilePath)
                 .asBitmap()
