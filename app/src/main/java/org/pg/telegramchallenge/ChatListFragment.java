@@ -27,6 +27,13 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private ChatListAdapter chatListAdapter;
     private LinearLayoutManager layoutManager;
 
+    private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem, visibleThreshold = 3;
+    private boolean loading = true, allLoaded = false;
+
+    private int nextLimit = 8;
+    private int nextOffset = 0;
+    private int prevLimit, prevOffset;
+
     public class TestMessage {
         final String message = "FUCK THIS SHIT MAN";
     }
@@ -70,7 +77,34 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
 
-        getApplication().sendRequest(new TdApi.GetChats(0, 10));
+//        chatListRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+//            @Override
+//            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+//                super.onScrolled(recyclerView, dx, dy);
+//
+//                visibleItems = recyclerView.getChildCount();
+//                totalItems = layoutManager.getItemCount();
+//                firstVisibleItem = layoutManager.findFirstVisibleItemPosition();
+//
+//                if (loading) {
+//                    if (totalItems > previousTotal) {
+//                        loading = false;
+//                        previousTotal = totalItems;
+//                    }
+//                }
+//
+//                if (!loading && totalItems - visibleItems <= firstVisibleItem + visibleThreshold) {
+//                    nextOffset = nextLimit;
+//                    nextLimit = nextLimit + 13;
+//
+//                    getApplication().sendRequest(new TdApi.GetChats(nextOffset, nextLimit));
+//
+//                    loading = true;
+//                }
+//            }
+//        });
+        nextLimit = Integer.MAX_VALUE;
+        getApplication().sendRequest(new TdApi.GetChats(nextOffset, nextLimit));
 
         return view;
     }
@@ -87,8 +121,10 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.Chats obj) {
+        
         chatListAdapter.changeData(obj.chats);
-        Log.e("CHATS COUNT",String.valueOf(obj.chats.length));
+
+        Log.e("CHATS PARAMS", String.valueOf(obj.chats.length));
     }
 
 }

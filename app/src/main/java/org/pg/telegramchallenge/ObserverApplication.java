@@ -230,7 +230,6 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         @Override
         public void run() {
-            Log.e(TAG+"CHECK_CALL", object.toString());
             if (object instanceof TdApi.AuthState) {
                 for (OnAuthObserver observer : onAuthObservers) {
                     observer.proceed((TdApi.AuthState) object);
@@ -282,7 +281,6 @@ public class ObserverApplication extends Application implements Client.ResultHan
             }
 
             if (object instanceof TdApi.Chats) {
-                Log.e(TAG, "CHATOBSERVESLOOP");
                 for (ChatsObserver observer : chatsObservers) {
                     observer.proceed((TdApi.Chats) object);
                 }
