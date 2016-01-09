@@ -40,6 +40,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     }
 
     public void changeData(TdApi.Chat[] chatList) {
+
+//        this.chatList.clear();
         this.chatList.addAll(Arrays.asList(chatList));
 
         this.notifyDataSetChanged();
@@ -53,11 +55,11 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
      */
     private boolean handleAvatar(ChatListVH holder, TdApi.ProfilePhoto p) {
 
-        holder.chatListItemView.setAvatarFilePath(null);
         if (!(p.small.path.isEmpty())) {
             holder.chatListItemView.setAvatarFilePath((p.small.path));
         } else {
-            if (p.small.id!=0) {
+            holder.chatListItemView.setAvatarFilePath(null);
+            if (p.small.id != 0) {
                 context.sendRequest(new TdApi.DownloadFile(p.small.id));
                 return true;
             }
@@ -87,11 +89,13 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
                 title += " " + privateChat.user.lastName;
             }
 
-            boolean avatarsAreDownloading = handleAvatar(holder, privateChat.user.profilePhoto);
+            handleAvatar(holder, privateChat.user.profilePhoto);
 
         } else {
             TdApi.GroupChat groupChat = ((TdApi.GroupChatInfo) chatList.get(position).type).groupChat;
             title = groupChat.title;
+
+            handleAvatar(holder, groupChat.photo);
         }
 
         holder.chatListItemView.setTitle(title);
