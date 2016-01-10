@@ -109,6 +109,11 @@ public class ObserverApplication extends Application implements Client.ResultHan
         void proceed(TdApi.Chats obj);
     }
 
+    private volatile List<OnUpdateFileObserver> onUpdateFileObservers = new LinkedList<>();
+    public interface OnUpdateFileObserver {
+        void proceed(TdApi.UpdateFile obj);
+    }
+
     /** for future
      * there can be multimap of classes of tdlib
      * assosiated with observers which have to get
@@ -123,6 +128,9 @@ public class ObserverApplication extends Application implements Client.ResultHan
     /** i think that one method for all observers is better
      * than one for each type of them*/
     public void addObserver(Object obs) {
+        if (obs instanceof OnUpdateFileObserver)
+            onUpdateFileObservers.add((OnUpdateFileObserver) obs);
+
         if (obs instanceof OnAuthObserver)
             onAuthObservers.add((OnAuthObserver) obs);
 
@@ -230,6 +238,18 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         @Override
         public void run() {
+
+            if (object instanceof TdApi.Update) {
+                if (object instanceof TdApi.UpdateFile) {
+                    for (OnUpdateFileObserver observer: onUpdateFileObservers) {
+                        observer.proceed((TdApi.UpdateFile) object);
+                    }
+                    return;
+                }
+
+                return;
+            }
+
             if (object instanceof TdApi.AuthState) {
                 for (OnAuthObserver observer : onAuthObservers) {
                     observer.proceed((TdApi.AuthState) object);

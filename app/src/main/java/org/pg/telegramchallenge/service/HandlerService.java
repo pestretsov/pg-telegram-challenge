@@ -1,6 +1,7 @@
 package org.pg.telegramchallenge.service;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Environment;
 import android.os.IBinder;
@@ -37,11 +38,13 @@ public class HandlerService extends Service implements Client.ResultHandler {
             dirFile.mkdirs();
         }
 
+        ObserverApplication application = (ObserverApplication)getApplicationContext();
+
         TG.setDir(dir);
-        TG.setUpdatesHandler(this);
+        TG.setUpdatesHandler(application);
 
         // when service is created, requests from pull can be invoked
-        ((ObserverApplication)getApplication()).invokeRequestPool();
+        application.invokeRequestPool();
 
         Toast.makeText(HandlerService.this, "Service is launched", Toast.LENGTH_SHORT).show();
     }

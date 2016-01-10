@@ -20,7 +20,8 @@ import java.util.List;
 /**
  * Created by artemypestretsov on 1/4/16.
  */
-public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH> {
+public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
+        implements ObserverApplication.OnUpdateFileObserver{
     private List<TdApi.Chat> chatList = new ArrayList<>();
     private ObserverApplication context;
 
@@ -73,30 +74,31 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         if (chatList == null) {
             return;
         }
-        if (chatList.get(position).topMessage.message instanceof TdApi.MessageText) {
-            holder.chatListItemView.setText(((TdApi.MessageText)chatList.get(position).topMessage.message).text);
+
+
+        TdApi.Chat currentChat = chatList.get(position);
+        if (currentChat.topMessage.message instanceof TdApi.MessageText) {
+            holder.chatListItemView.setText(((TdApi.MessageText) currentChat.topMessage.message).text);
         } else {
             holder.chatListItemView.setText("BOSS");
         }
 
 
         String title = "";
-        if (chatList.get(position).type instanceof TdApi.PrivateChatInfo) {
+        if (currentChat.type instanceof TdApi.PrivateChatInfo) {
             // TODO: MAYBE NO LAST NAME
-            TdApi.PrivateChatInfo privateChat = (TdApi.PrivateChatInfo) chatList.get(position).type;
+            TdApi.PrivateChatInfo privateChat = (TdApi.PrivateChatInfo) currentChat.type;
             title = privateChat.user.firstName;
             if (privateChat.user.lastName.length() > 0) {
                 title += " " + privateChat.user.lastName;
             }
 
-            handleAvatar(holder, privateChat.user.profilePhoto);
-
         } else {
-            TdApi.GroupChat groupChat = ((TdApi.GroupChatInfo) chatList.get(position).type).groupChat;
+            TdApi.GroupChat groupChat = ((TdApi.GroupChatInfo) currentChat.type).groupChat;
             title = groupChat.title;
-
-            handleAvatar(holder, groupChat.photo);
         }
+
+        handleAvatar(holder, getProfilePhoto(currentChat));
 
         holder.chatListItemView.setTitle(title);
     }
@@ -106,6 +108,30 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         if (chatList != null)
             return chatList.size();
         return 0;
+    }
+
+    private TdApi.ProfilePhoto getProfilePhoto(TdApi.Chat c) {
+        switch (c.type.getConstructor()) {
+            case TdApi.PrivateChatInfo.CONSTRUCTOR:
+                return ((TdApi.PrivateChatInfo)c.type).user.profilePhoto;
+            case TdApi.GroupChatInfo.CONSTRUCTOR:
+                return ((TdApi.GroupChatInfo)c.type).groupChat.photo;
+            default:
+                throw new IllegalArgumentException("No profile photo in Chat!");
+        }
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateFile obj) {
+        int i = 0;
+        for (TdApi.Chat c : chatList) {
+            if (obj.file.id == getProfilePhoto(c).small.id) {
+                getProfilePhoto(c).small = obj.file;
+                this.notifyItemChanged(i);
+                break;
+            }
+            i++;
+        }
     }
 
     public class ChatListVH extends RecyclerView.ViewHolder {

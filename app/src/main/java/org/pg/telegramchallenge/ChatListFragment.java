@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,6 +56,15 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         super.onResume();
 
         getApplication().addObserver(this);
+        getApplication().addObserver(chatListAdapter);
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+
+        getApplication().removeObserver(this);
+        getApplication().removeObserver(chatListAdapter);
     }
 
     @Override
@@ -65,6 +75,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
         layoutManager = new LinearLayoutManager(getActivity());
         chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chatListRecyclerView);
+        // if changeAnimation is enabled it looks like shit; try for yourself
+        ((SimpleItemAnimator)chatListRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 
         chatListAdapter = new ChatListAdapter();
         chatListRecyclerView.setAdapter(chatListAdapter);
