@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BaseChatItemView">
+        <attr name="barColor" format="color"/>
+
+        <attr name="barMessageTextSize" format="dimension"/>
+        <attr name="barMessageTextColor" format="color"/>
+
+        <attr name="dateTextSize" format="dimension"/>
+        <attr name="dateTextColor" format="color"/>
+
+    </declare-styleable>
+</resources>

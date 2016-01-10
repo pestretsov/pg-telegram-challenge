@@ -40,6 +40,14 @@ public class EmptyFragment extends Fragment {
         itemView.setUnreadCount(1);
         itemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
 
+        itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                v.requestLayout();
+                v.invalidate();
+            }
+        });
+
         return view;
     }
 
