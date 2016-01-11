@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.text.format.DateUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import com.bumptech.glide.Glide;
@@ -16,6 +17,7 @@ import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -61,8 +63,8 @@ public class ChatListItemView extends View {
 
     // mText is for message text, mTitleText is for name
     private String mText, mTitleText;
-    private float[] mTextWidths;
-    private Date mDate;
+    private float[] mTextWidths, mTitleTextWidths;
+    private Calendar mDate;
 
     private int unread = 0;
     private ChatStatus mStatus = ChatStatus.READ;
@@ -74,7 +76,8 @@ public class ChatListItemView extends View {
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
     private final int mCounterColor;
 
-    private static final SimpleDateFormat localeDateFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
+    private static final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy", Locale.ENGLISH);
     private final Rect bounds = new Rect();
 
     public ChatListItemView(Context context, AttributeSet attrs) {
@@ -102,6 +105,7 @@ public class ChatListItemView extends View {
             mText = getOrElse(attributes.getString(R.styleable.ChatListItemView_android_text), "");
             mTextWidths = new float[mText.length()];
             mTitleText = getOrElse(attributes.getString(R.styleable.ChatListItemView_titleText), "");
+            mTitleTextWidths = new float[mTitleText.length()];
 
         } finally {
             attributes.recycle();
@@ -109,7 +113,7 @@ public class ChatListItemView extends View {
 
         init();
 
-        mDate = new Date(System.currentTimeMillis());
+        mDate = Calendar.getInstance();
     }
 
     @Override
@@ -194,6 +198,7 @@ public class ChatListItemView extends View {
 
     @Override
     protected void onDraw(final Canvas canvas) {
+        Context context = getContext();
 
         final int left = getPaddingLeft();
         final int top = getPaddingTop();
@@ -208,7 +213,13 @@ public class ChatListItemView extends View {
         final String initials = getInitials(mTitleText);
         mInitialsTextPaint.getTextBounds(initials, 0, initials.length(), bounds);
 
-        String displayedTime = localeDateFormat.format(mDate);
+
+        String displayedTime;
+        if (DateUtils.isToday(mDate.getTimeInMillis())) {
+           displayedTime = timeFormat.format(mDate.getTime());
+        } else {
+            displayedTime = dateFormat.format(mDate.getTime());
+        }
 
         // drawing avatar
         if (avatarDrawable == null) {
@@ -226,9 +237,7 @@ public class ChatListItemView extends View {
         }
 
         // title and main text should begin on same position
-        float textStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, getContext());
-
-        canvas.drawText(mTitleText, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+        float textStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, context);
 
         canvas.drawText(displayedTime,
                 right - mTimeTextPaint.measureText(displayedTime),
@@ -255,7 +264,7 @@ public class ChatListItemView extends View {
 
             int textLeft, textTop, textRight, textBottom;
 
-            textRight = (int) (right - mTimeTextPaint.measureText(displayedTime) - dpToPx(mStatusPadding, getContext()));
+            textRight = (int) (right - mTimeTextPaint.measureText(displayedTime) - dpToPx(mStatusPadding, context));
             textLeft = textRight - statusDrawableSize;
 
             textBottom = (int) (top + betweenText + mTitleTextHeight - timeTextRealHight/2f + statusDrawableSize/2f);
@@ -292,7 +301,7 @@ public class ChatListItemView extends View {
                     counterPaint
             );
 
-            textEndX = cx - rectLength - radius - dpToPx(mTextPadding, getContext());
+            textEndX = cx - rectLength - radius - dpToPx(mTextPadding, context);
 
             canvas.drawRect(cx - rectLength,
                     cy - radius,
@@ -310,10 +319,16 @@ public class ChatListItemView extends View {
         }
 
         mTextPaint.getTextWidths(mText, 0, mText.length(), mTextWidths);
+        mTitleTextPaint.getTextWidths(mTitleText, 0, mTitleText.length(), mTitleTextWidths);
 
         float textLength = 0;
         for (float f : mTextWidths) {
             textLength += f;
+        }
+
+        float titleTextLength = 0;
+        for (float f: mTitleTextWidths) {
+            titleTextLength += f;
         }
 
         float maxTextLength = textEndX - textStartX;
@@ -331,10 +346,30 @@ public class ChatListItemView extends View {
         } else {
             canvas.drawText(mText, textStartX, bottom - betweenText, mTextPaint);
         }
+
+        // constant dp for now; mb shoul change that
+        float maxTitleTextLength = - textStartX + (right - dpToPx(85, context));
+        if (titleTextLength>maxTitleTextLength) {
+            int pos = 0;
+            float dotsLenght = mTitleTextPaint.measureText("...");
+            titleTextLength = 0;
+
+            while (titleTextLength + mTitleTextWidths[pos] < (maxTitleTextLength-dotsLenght)){
+                titleTextLength += mTitleTextWidths[pos];
+                pos++;
+            }
+
+            canvas.drawText(mTitleText.substring(0,pos).concat("..."),
+                    textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+        } else {
+            canvas.drawText(mTitleText, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+        }
+
     }
 
     public void setTitle(String s){
         mTitleText = s;
+        mTitleTextWidths = new float[mTitleText.length()];
         invalidate();
     }
 
@@ -345,7 +380,13 @@ public class ChatListItemView extends View {
     }
 
     public void setDate(Date date){
-        mDate = date;
+        mDate = Calendar.getInstance();
+        mDate.setTime(date);
+        invalidate();
+    }
+
+    public void setDate(Calendar c) {
+        mDate = c;
         invalidate();
     }
 
