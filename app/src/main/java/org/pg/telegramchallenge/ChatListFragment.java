@@ -16,13 +16,14 @@ import org.pg.telegramchallenge.Adapters.ChatListAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observer;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
-        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver {
+        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.ChatObserver {
 
     private RecyclerView chatListRecyclerView;
     private ChatListAdapter chatListAdapter;
@@ -75,7 +76,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
         layoutManager = new LinearLayoutManager(getActivity());
         chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chatListRecyclerView);
-        // if changeAnimation is enabled it looks like shit; try for yourself
+        // if changeAnimation is enabled it looks like shit; try it yourself
         ((SimpleItemAnimator)chatListRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 
         chatListAdapter = new ChatListAdapter();
@@ -120,7 +121,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.UpdateNewMessage obj) {
-
+        chatListAdapter.updateMessage(obj.message);
+        getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
     }
 
     @Override
@@ -128,4 +130,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         chatListAdapter.changeData(obj.chats);
     }
 
+    @Override
+    public void proceed(TdApi.Chat obj) {
+        chatListAdapter.updateData(obj);
+    }
 }

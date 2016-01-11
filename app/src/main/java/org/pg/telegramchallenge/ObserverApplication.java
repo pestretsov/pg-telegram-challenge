@@ -109,6 +109,12 @@ public class ObserverApplication extends Application implements Client.ResultHan
         void proceed(TdApi.Chats obj);
     }
 
+    private volatile List<ChatObserver> chatObservers = new LinkedList<>();
+
+    public interface ChatObserver {
+        void proceed(TdApi.Chat obj);
+    }
+
     private volatile List<OnUpdateFileObserver> onUpdateFileObservers = new LinkedList<>();
     public interface OnUpdateFileObserver {
         void proceed(TdApi.UpdateFile obj);
@@ -160,6 +166,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
         if (obs instanceof ChatsObserver) {
             chatsObservers.add((ChatsObserver) obs);
         }
+
+        if (obs instanceof ChatObserver) {
+            chatObservers.add((ChatObserver) obs);
+        }
     }
 
     public void removeObserver(Object obs) {
@@ -193,6 +203,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         if (obs instanceof ChatsObserver) {
             chatsObservers.remove(obs);
+        }
+
+        if (obs instanceof ChatObserver) {
+            chatObservers.remove(obs);
         }
     }
 
@@ -247,6 +261,41 @@ public class ObserverApplication extends Application implements Client.ResultHan
                     return;
                 }
 
+                if (object instanceof TdApi.UpdateNewMessage) {
+                    for (OnUpdateNewMessageObserver observer : onUpdateNewMessageObservers) {
+                        observer.proceed((TdApi.UpdateNewMessage) object);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateChatReadInbox) {
+                    for (OnUpdateChatReadInboxObserver observer : onUpdateChatReadInboxObservers) {
+                        observer.proceed((TdApi.UpdateChatReadInbox) object);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateChatReadOutbox) {
+                    for (OnUpdateChatReadOutboxObserver observer : onUpdateChatReadOutboxObservers) {
+                        observer.proceed((TdApi.UpdateChatReadOutbox) object);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateChatTitle) {
+                    for (OnUpdateChatTitleObserver observer : onUpdateChatTitleObservers) {
+                        observer.proceed((TdApi.UpdateChatTitle) object);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateUserAction) {
+                    for (OnUpdateUserActionObserver observer : onUpdateUserActionObservers) {
+                        observer.proceed((TdApi.UpdateUserAction) object);
+                    }
+                    return;
+                }
+
                 return;
             }
 
@@ -264,45 +313,16 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 return;
             }
 
-
-            if (object instanceof TdApi.UpdateNewMessage) {
-                for (OnUpdateNewMessageObserver observer : onUpdateNewMessageObservers) {
-                    observer.proceed((TdApi.UpdateNewMessage) object);
-                }
-                return;
-            }
-
-            if (object instanceof TdApi.UpdateUserAction) {
-                for (OnUpdateUserActionObserver observer : onUpdateUserActionObservers) {
-                    observer.proceed((TdApi.UpdateUserAction) object);
-                }
-                return;
-            }
-
-            if (object instanceof TdApi.UpdateChatReadInbox) {
-                for (OnUpdateChatReadInboxObserver observer : onUpdateChatReadInboxObservers) {
-                    observer.proceed((TdApi.UpdateChatReadInbox) object);
-                }
-                return;
-            }
-
-            if (object instanceof TdApi.UpdateChatReadOutbox) {
-                for (OnUpdateChatReadOutboxObserver observer : onUpdateChatReadOutboxObservers) {
-                    observer.proceed((TdApi.UpdateChatReadOutbox) object);
-                }
-                return;
-            }
-
-            if (object instanceof TdApi.UpdateChatTitle) {
-                for (OnUpdateChatTitleObserver observer : onUpdateChatTitleObservers) {
-                    observer.proceed((TdApi.UpdateChatTitle) object);
-                }
-                return;
-            }
-
             if (object instanceof TdApi.Chats) {
                 for (ChatsObserver observer : chatsObservers) {
                     observer.proceed((TdApi.Chats) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.Chat) {
+                for (ChatObserver observer : chatObservers) {
+                    observer.proceed((TdApi.Chat) object);
                 }
                 return;
             }

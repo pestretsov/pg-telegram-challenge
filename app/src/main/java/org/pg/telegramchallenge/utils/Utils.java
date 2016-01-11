@@ -23,4 +23,8 @@ public class Utils {
 
         return (primary == null)?another:primary;
     }
+
+    public static long timestampToMillis(long timestamp) {
+        return timestamp * 1000L;
+    }
 }

@@ -11,22 +11,31 @@ import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.ChatListFragment;
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
+import org.pg.telegramchallenge.utils.Utils;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by artemypestretsov on 1/4/16.
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
         implements ObserverApplication.OnUpdateFileObserver{
-    private List<TdApi.Chat> chatList = new ArrayList<>();
+
+    private List<Long> chatList = new LinkedList<>();
+    private Map<Long, TdApi.Chat> chatMap = new HashMap<>();
+
     private ObserverApplication context;
 
     public ChatListAdapter(TdApi.Chat[] chatList) {
-        this.chatList.addAll(Arrays.asList(chatList));
+//        this.chatList.addAll(Arrays.asList(chatList));
     }
 
     public ChatListAdapter() {}
@@ -42,10 +51,31 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
     public void changeData(TdApi.Chat[] chatList) {
 
-//        this.chatList.clear();
-        this.chatList.addAll(Arrays.asList(chatList));
+//        this.chatList.addAll(Arrays.asList(chatList));
+
+        for (TdApi.Chat chat: chatList) {
+            chatMap.put(chat.id, chat);
+            this.chatList.add(chat.id);
+        }
 
         this.notifyDataSetChanged();
+    }
+
+    public void updateMessage(TdApi.Message message) {
+        chatMap.get(message.chatId).topMessage = message;
+    }
+
+    public void updateData(TdApi.Chat chat) {
+        if (chatMap.containsKey(chat.id)) {
+            chatList.remove(chat.id);
+            chatList.add(0, chat.id);
+        } else {
+            chatMap.put(chat.id, chat);
+            chatList.add(chat.id);
+        }
+
+        // TODO: specify range for efficiency
+        notifyDataSetChanged();
     }
 
     /**
@@ -76,21 +106,30 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         }
 
 
-        TdApi.Chat currentChat = chatList.get(position);
+        TdApi.Chat currentChat = chatMap.get(chatList.get(position));
         if (currentChat.topMessage.message instanceof TdApi.MessageText) {
             holder.chatListItemView.setText(((TdApi.MessageText) currentChat.topMessage.message).text);
         } else {
             holder.chatListItemView.setText("BOSS");
         }
 
+        Date date = new Date(Utils.timestampToMillis(currentChat.topMessage.date));
+        holder.chatListItemView.setDate(date);
+
+        holder.chatListItemView.setUnreadCount(currentChat.unreadCount);
 
         String title = "";
         if (currentChat.type instanceof TdApi.PrivateChatInfo) {
             // TODO: MAYBE NO LAST NAME
             TdApi.PrivateChatInfo privateChat = (TdApi.PrivateChatInfo) currentChat.type;
-            title = privateChat.user.firstName;
+            if (privateChat.user.firstName.length() > 0) {
+                title += privateChat.user.firstName;
+            }
+
             if (privateChat.user.lastName.length() > 0) {
-                title += " " + privateChat.user.lastName;
+                if (title.length() > 0)
+                    title += " ";
+                title += privateChat.user.lastName;
             }
 
         } else {
@@ -124,7 +163,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     @Override
     public void proceed(TdApi.UpdateFile obj) {
         int i = 0;
-        for (TdApi.Chat c : chatList) {
+        for (Long chatId : chatList) {
+            TdApi.Chat c = chatMap.get(chatId);
             if (obj.file.id == getProfilePhoto(c).small.id) {
                 getProfilePhoto(c).small = obj.file;
                 this.notifyItemChanged(i);
