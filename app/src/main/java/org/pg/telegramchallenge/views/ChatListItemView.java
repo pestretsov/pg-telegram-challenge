@@ -8,13 +8,16 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.text.TextPaint;
 import android.text.format.DateUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
+import org.pg.telegramchallenge.utils.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -22,6 +25,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import static org.pg.telegramchallenge.utils.Utils.dpToPx;
+import static org.pg.telegramchallenge.utils.Utils.getOrCompute;
 import static org.pg.telegramchallenge.utils.Utils.getOrElse;
 
 public class ChatListItemView extends View {
@@ -63,6 +67,8 @@ public class ChatListItemView extends View {
 
     // mText is for message text, mTitleText is for name
     private String mText, mTitleText;
+    private float textLength, titleTextLength;
+
     private float[] mTextWidths, mTitleTextWidths;
     private Calendar mDate;
 
@@ -71,10 +77,10 @@ public class ChatListItemView extends View {
     private String avatarImageFilePath = null;
     ViewTarget<ChatListItemView, Bitmap> glideTarget;
 
-    private Drawable clockIcon, bageIcon;
+    private static Drawable clockIcon, bageIcon;
     private Drawable avatarDrawable = null;
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
-    private final int mCounterColor;
+    private int mCounterColor;
 
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy", Locale.ENGLISH);
@@ -85,9 +91,9 @@ public class ChatListItemView extends View {
         TypedArray attributes = context.obtainStyledAttributes(attrs,
                 R.styleable.ChatListItemView);
 
+        String text, title;
+
         try {
-            clockIcon = attributes.getDrawable(R.styleable.ChatListItemView_myDrawable);
-//            mLineColor = attributes.getColor(R.styleable.BaseView_android_background, Color.WHITE);
             mLineColor = Color.BLUE;
             avatarColor =  attributes.getColor(R.styleable.ChatListItemView_avatarColor, Color.MAGENTA);
             mTextColor = attributes.getColor(R.styleable.ChatListItemView_android_textColor, Color.BLACK);
@@ -101,19 +107,18 @@ public class ChatListItemView extends View {
             mTitleTextHeight = attributes.getDimension(R.styleable.ChatListItemView_titleTextSize, 0.0f);
             mTimeTextHeight = attributes.getDimension(R.styleable.ChatListItemView_timeTextSize, 0.0f);
 
-
-            mText = getOrElse(attributes.getString(R.styleable.ChatListItemView_android_text), "");
-            mTextWidths = new float[mText.length()];
-            mTitleText = getOrElse(attributes.getString(R.styleable.ChatListItemView_titleText), "");
-            mTitleTextWidths = new float[mTitleText.length()];
-
+            text = getOrElse(attributes.getString(R.styleable.ChatListItemView_android_text), "");
+            title = getOrElse(attributes.getString(R.styleable.ChatListItemView_titleText), "");
         } finally {
             attributes.recycle();
         }
 
         init();
 
-        mDate = Calendar.getInstance();
+        setText(text, false);
+        setTitle(title, false);
+
+        setDate(Calendar.getInstance());
     }
 
     @Override
@@ -128,12 +133,27 @@ public class ChatListItemView extends View {
                 heightWithoutPadding + getPaddingTop() + getPaddingBottom());
     }
 
+    private final Utils.Computable<Drawable> clockComputable = new Utils.Computable<Drawable>() {
+        @Override
+        public Drawable compute() {
+            return getResources().getDrawable(R.drawable.ic_clock);
+        }
+    };
+
+    private final Utils.Computable<Drawable> bageComputable = new Utils.Computable<Drawable>() {
+        @Override
+        public Drawable compute() {
+            return getResources().getDrawable(R.drawable.ic_badge);
+        }
+    };
+
     protected void init(){
         // size of avatar letters / avatar radius
         float avatarRatio = 1;
 
-        clockIcon = getResources().getDrawable(R.drawable.ic_clock);
-        bageIcon = getResources().getDrawable(R.drawable.ic_badge);
+        clockIcon = getOrCompute(clockIcon, clockComputable);
+
+        bageIcon = getOrCompute(bageIcon, bageComputable);
         bageIcon.setColorFilter(bageColor, PorterDuff.Mode.SRC_ATOP);
 
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -216,7 +236,7 @@ public class ChatListItemView extends View {
 
         String displayedTime;
         if (DateUtils.isToday(mDate.getTimeInMillis())) {
-           displayedTime = timeFormat.format(mDate.getTime());
+            displayedTime = timeFormat.format(mDate.getTime());
         } else {
             displayedTime = dateFormat.format(mDate.getTime());
         }
@@ -318,65 +338,70 @@ public class ChatListItemView extends View {
             textEndX = right;
         }
 
-        mTextPaint.getTextWidths(mText, 0, mText.length(), mTextWidths);
-        mTitleTextPaint.getTextWidths(mTitleText, 0, mTitleText.length(), mTitleTextWidths);
-
-        float textLength = 0;
-        for (float f : mTextWidths) {
-            textLength += f;
-        }
-
-        float titleTextLength = 0;
-        for (float f: mTitleTextWidths) {
-            titleTextLength += f;
-        }
-
         float maxTextLength = textEndX - textStartX;
-        if (textLength > maxTextLength) {
-            int pos = 0;
-            float dotsLenght = mTextPaint.measureText("...");
-            textLength = 0;
-
-            while (textLength + mTextWidths[pos] < (maxTextLength-dotsLenght)){
-                textLength += mTextWidths[pos];
-                pos++;
-            }
-
-            canvas.drawText(mText.substring(0,pos).concat("..."), textStartX, bottom - betweenText, mTextPaint);
-        } else {
-            canvas.drawText(mText, textStartX, bottom - betweenText, mTextPaint);
-        }
+        String adjustedString = adjustString(mText, textLength, mTextWidths, maxTextLength, mTextPaint);
+        canvas.drawText(adjustedString, textStartX, bottom - betweenText, mTextPaint);
 
         // constant dp for now; mb shoul change that
         float maxTitleTextLength = - textStartX + (right - dpToPx(85, context));
-        if (titleTextLength>maxTitleTextLength) {
-            int pos = 0;
-            float dotsLenght = mTitleTextPaint.measureText("...");
-            titleTextLength = 0;
+        String adjustedTitle = adjustString(mTitleText, titleTextLength, mTitleTextWidths, maxTitleTextLength, mTitleTextPaint);
+        canvas.drawText(adjustedTitle, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
 
-            while (titleTextLength + mTitleTextWidths[pos] < (maxTitleTextLength-dotsLenght)){
-                titleTextLength += mTitleTextWidths[pos];
+    }
+
+    private String adjustString(String original, float totalWidth, float[] widths, float widthLimit, Paint paint){
+
+        if (totalWidth > widthLimit) {
+            int pos = 0;
+            String dots = "...";
+            float dotsLenght = paint.measureText(dots);
+            float adjustedTotalLength = 0;
+
+            while (adjustedTotalLength + widths[pos] < (widthLimit - dotsLenght)) {
+                adjustedTotalLength += widths[pos];
                 pos++;
             }
 
-            canvas.drawText(mTitleText.substring(0,pos).concat("..."),
-                    textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
-        } else {
-            canvas.drawText(mTitleText, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+            return original.substring(0, pos).concat(dots);
         }
+
+        return original;
 
     }
 
     public void setTitle(String s){
+        setTitle(s, true);
+    }
+
+    private void setTitle(String s, boolean invalidate) {
         mTitleText = s;
         mTitleTextWidths = new float[mTitleText.length()];
-        invalidate();
+        if (mTitleTextPaint!=null) {
+            mTitleTextPaint.getTextWidths(mTitleText, 0, mTitleText.length(), mTitleTextWidths);
+            mTitleTextPaint.getTextBounds(mTitleText, 0, mTitleText.length(), bounds);
+            titleTextLength = bounds.right-bounds.left;
+        }
+
+        if (invalidate)
+            invalidate();
     }
 
     public void setText(String s){
+        setText(s, true);
+    }
+
+    private void setText(String s, boolean invalidate){
         mText = s;
         mTextWidths = new float[mText.length()];
-        invalidate();
+
+        if (mTextPaint!=null) {
+            mTextPaint.getTextWidths(mText, 0, mText.length(), mTextWidths);
+            mTextPaint.getTextBounds(mText, 0, mText.length(), bounds);
+            textLength = bounds.right - bounds.left;
+        }
+
+        if (invalidate)
+            invalidate();
     }
 
     public void setDate(Date date){
