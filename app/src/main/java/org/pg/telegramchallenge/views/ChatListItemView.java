@@ -118,7 +118,7 @@ public class ChatListItemView extends View {
         setText(text, false);
         setTitle(title, false);
 
-        setDate(Calendar.getInstance());
+        mDate = Calendar.getInstance();
     }
 
     @Override

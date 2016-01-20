@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import org.pg.telegramchallenge.views.BaseChatItemView;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
 
@@ -45,6 +46,16 @@ public class EmptyFragment extends Fragment {
             public void onClick(View v) {
                 v.requestLayout();
                 v.invalidate();
+            }
+        });
+
+        BaseChatItemView messageView = (BaseChatItemView) view.findViewById(R.id.message);
+        messageView.setOnClickListener(new View.OnClickListener() {
+            boolean state = false;
+            @Override
+            public void onClick(View v) {
+                ((BaseChatItemView)v).setDateVisability(state);
+                state = !state;
             }
         });
 

@@ -17,4 +17,7 @@
     <string name="auth_country">Country</string>
     <string name="auth_first_name_hint">First name</string>
     <string name="auth_second_name_hint">Last name (optional)</string>
+
+    <!--for message view placeholder (e.g. 10 unread messages)-->
+    <string name="unread_messages">new messages</string>
 </resources>

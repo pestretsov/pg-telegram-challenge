@@ -18,4 +18,14 @@
         <attr name="avatarColor" format="color"/>
         <attr name="myDrawable" format="reference"/>
     </declare-styleable>
+
+    <declare-styleable name="BaseChatItemView">
+        <attr name="barColor" format="color"/>
+
+        <attr name="barMessageTextSize" format="dimension"/>
+        <attr name="barMessageTextColor" format="color"/>
+
+        <attr name="dateTextSize" format="dimension"/>
+        <attr name="dateTextColor" format="color"/>
+    </declare-styleable>
 </resources>

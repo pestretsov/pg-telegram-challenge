@@ -16,7 +16,6 @@
         android:padding="16dp"
     />
     <org.pg.telegramchallenge.views.ChatListItemView
-            android:layout_below="@id/sample_view"
             style="@style/ChatListItemTextStyle"
             android:id="@+id/sample_view_2"
             android:layout_width="match_parent"
@@ -24,7 +23,15 @@
             auto:titleText="Artemy Pestretsov"
             android:text="mister president, are you fucking kidding me?"
             android:padding="16dp"
-    />
+            android:layout_below="@+id/message" android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"/>
+
+    <org.pg.telegramchallenge.views.BaseChatItemView
+            style="@style/BaseChatItemViewTextStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_below="@+id/sample_view"
+            android:layout_alignParentLeft="true" android:layout_alignParentStart="true"
+            android:id="@+id/message"/>
 
 
 
