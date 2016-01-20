@@ -8,18 +8,22 @@ import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
 import org.pg.telegramchallenge.R;
-import org.pg.telegramchallenge.utils.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+
+import static org.pg.telegramchallenge.utils.Utils.*;
 
 /**
  * Created by roman on 09.01.16.
  */
 public class BaseChatItemView extends View {
 
-    public static int mBarHeightDP = 20;
+    private int mBarHeight;
+    private int mDatePlaceholderHeight;
+    private static int barPaddingDp = 6;
+
     Calendar mDate;
 
     Paint mBarPaint;
@@ -80,18 +84,18 @@ public class BaseChatItemView extends View {
 
         int heightWithoutPadding = 0;
         if (mDateVisibility) {
-            heightWithoutPadding += Utils.dpToPx(20,c);
+            heightWithoutPadding += mDatePlaceholderHeight;
         }
 
         if (mBarVisibility)
-            heightWithoutPadding += Utils.dpToPx(mBarHeightDP, c);
+            heightWithoutPadding += mBarHeight;
 
         int height = getPaddingTop() + getPaddingBottom() + heightWithoutPadding;
         setMeasuredDimension(width, height);
     }
 
+    private static final Typeface boldTypeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD);
     protected void init(){
-        Typeface boldTypeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD);
 
         mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mBarPaint.setColor(mBarColor);
@@ -109,6 +113,10 @@ public class BaseChatItemView extends View {
         mBarMessageTextPaint.setTextAlign(Paint.Align.CENTER);
 //        mBarMessageTextPaint.setFakeBoldText(true);
         mBarMessageTextPaint.setTypeface(boldTypeface);
+
+        int padding = dpToPx(barPaddingDp, getContext());
+        mBarHeight = (int)mBarMessageTextSize + 2*padding;
+        mDatePlaceholderHeight = (int)mDateTextHeight + 2*padding;
     }
 
     @Override
@@ -119,27 +127,35 @@ public class BaseChatItemView extends View {
         final int right = getWidth() - getPaddingRight();
         final int bottom = getHeight() - getPaddingBottom();
 
+        int barPadding = dpToPx(barPaddingDp, getContext());
+
         if (mBarVisibility && mUnreadMessagesCount>0) {
-            canvas.drawRect(0, top, getWidth(), top + Utils.dpToPx(mBarHeightDP, getContext()), mBarPaint);
+            canvas.drawRect(0, top, getWidth(), top + mBarHeight, mBarPaint);
             String barMessage = String.format("%d %s", mUnreadMessagesCount, mUnreadMessagesString);
             mBarMessageTextPaint.getTextBounds(barMessage, 0, barMessage.length(), rect);
             float barMessageWidth = rect.right - rect.left;
-            canvas.drawText(barMessage, (left+right)/2f, top + mBarMessageTextSize, mBarMessageTextPaint);
+            int barMessageHeight = rect.bottom - rect.top;
 
-            int arrowDrawableStart = (int)((left+right)/2f + barMessageWidth/2f + 0.5f) + Utils.dpToPx(mArrowPadding, getContext());
+            float textStartY = (top + mBarHeight/2f - (mBarMessageTextPaint.descent() + mBarMessageTextPaint.ascent())/2);
+            canvas.drawText(barMessage, (left+right)/2f, textStartY, mBarMessageTextPaint);
+
+            int arrowDrawableStart = (int)((left+right)/2f + barMessageWidth/2f + 0.5f) + dpToPx(mArrowPadding, getContext());
             int arrowHeight = (int)(mBarMessageTextSize/2f);
             rect.set(arrowDrawableStart,
-                    top + (int)mBarMessageTextSize - arrowHeight,
+                    (int)textStartY - arrowHeight,
                     arrowDrawableStart + 2*arrowHeight,
-                    top + (int)mBarMessageTextSize);
+                    (int)textStartY);
             mDownArrowDrawable.setBounds(rect);
             mDownArrowDrawable.draw(canvas);
         }
 
         if (mDateVisibility) {
+
+            float textStartY = (top + mBarHeight + mDatePlaceholderHeight/2f
+                    - (mDateTextPaint.descent() + mDateTextPaint.ascent())/2);
             canvas.drawText(dateFormat.format(mDate.getTime()),
                     (left+right)/2f,
-                    0 + Utils.dpToPx(mBarHeightDP, getContext()) + mDateTextHeight,
+                    textStartY,
                     mDateTextPaint);
         }
 

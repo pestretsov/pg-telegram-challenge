@@ -178,6 +178,7 @@ public class ChatListItemView extends View {
         mInitialsTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mInitialsTextPaint.setTextSize(avatarImageRadius * avatarRatio);
         mInitialsTextPaint.setColor(Color.WHITE);
+        mInitialsTextPaint.setTextAlign(Paint.Align.CENTER);
 
         linePaint = new Paint();
         linePaint.setStyle(Paint.Style.STROKE);
@@ -248,8 +249,8 @@ public class ChatListItemView extends View {
                     avatarImageRadius,
                     avatarCirclePaint);
             canvas.drawText(initials,
-                    left + avatarImageRadius - mInitialsTextPaint.measureText(initials) / 2,
-                    (top + bottom) / 2 + (bounds.bottom - bounds.top) / 2,
+                    left + avatarImageRadius,
+                    (top + bottom) / 2 - (mInitialsTextPaint.descent() + mInitialsTextPaint.ascent())/2,
                     mInitialsTextPaint);
         } else {
             avatarDrawable.setBounds(left, top, left + avatarImageRadius*2, top + avatarImageRadius*2);
