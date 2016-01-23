@@ -28,4 +28,8 @@
         <attr name="dateTextSize" format="dimension"/>
         <attr name="dateTextColor" format="color"/>
     </declare-styleable>
+
+    <declare-styleable name="BaseUserMessageView">
+
+    </declare-styleable>
 </resources>

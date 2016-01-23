@@ -26,12 +26,15 @@
         <item name="counterTextColor">#FFFFFF</item>
     </style>
 
-    <style name="BaseChatItemViewTextStyle">
+    <style name="BaseChatItemViewStyle">
         <item name="barMessageTextSize">14sp</item>
         <item name="barMessageTextColor">#579bcf</item>
         <item name="barColor">#EBF2F7</item>
         <item name="dateTextSize">16sp</item>
         <item name="dateTextColor">#333333</item>
+    </style>
+
+    <style name="BaseUserMessageViewStyle" parent="BaseChatItemViewStyle">
     </style>
 
     <!-- Base application theme. -->
