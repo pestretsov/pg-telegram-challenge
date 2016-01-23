@@ -22,9 +22,9 @@ public class BaseChatItemView extends View {
 
     protected int mBarHeight;
     protected int mDatePlaceholderHeight;
-    protected static int HORIZONTAL_PADDING_DP = 6;
+    protected static int VERTICAL_PADDING_DP = 6;
 
-    Calendar mDate;
+    protected Calendar mDate;
 
     Paint mBarPaint;
     TextPaint mDateTextPaint;
@@ -62,7 +62,6 @@ public class BaseChatItemView extends View {
 
             mDateTextColor = attributes.getColor(R.styleable.BaseChatItemView_dateTextColor, Color.BLACK);
             mDateTextHeight = attributes.getDimension(R.styleable.BaseChatItemView_dateTextSize, 0f);
-
         } finally {
             attributes.recycle();
         }
@@ -78,7 +77,7 @@ public class BaseChatItemView extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         Context c = getContext();
-        int holdersPadding = dpToPx(HORIZONTAL_PADDING_DP, c);
+        int holdersPadding = dpToPx(VERTICAL_PADDING_DP, c);
 
         int width = getMeasuredWidth();
         int widthWithoutPadding = width - getPaddingLeft() - getPaddingRight();
@@ -101,7 +100,7 @@ public class BaseChatItemView extends View {
         setMeasuredDimension(width, height);
     }
 
-    private static final Typeface boldTypeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD);
+    protected static final Typeface mBoldTypeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD);
     private void init() {
         mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mBarPaint.setColor(mBarColor);
@@ -111,16 +110,16 @@ public class BaseChatItemView extends View {
         mDateTextPaint.setTextSize(mDateTextHeight);
         mDateTextPaint.setColor(mDateTextColor);
         mDateTextPaint.setTextAlign(Paint.Align.CENTER);
-        mDateTextPaint.setTypeface(boldTypeface);
+        mDateTextPaint.setTypeface(mBoldTypeface);
 
         mBarMessageTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mBarMessageTextPaint.setTextSize(mBarMessageTextSize);
         mBarMessageTextPaint.setColor(mBarMessageTextColor);
         mBarMessageTextPaint.setTextAlign(Paint.Align.CENTER);
 //        mBarMessageTextPaint.setFakeBoldText(true);
-        mBarMessageTextPaint.setTypeface(boldTypeface);
+        mBarMessageTextPaint.setTypeface(mBoldTypeface);
 
-        int padding = dpToPx(HORIZONTAL_PADDING_DP, getContext());
+        int padding = dpToPx(VERTICAL_PADDING_DP, getContext());
         mBarHeight = (int)mBarMessageTextSize*2;
         mDatePlaceholderHeight = (int)mDateTextHeight*2;
     }
@@ -133,7 +132,7 @@ public class BaseChatItemView extends View {
         final int right = getWidth() - getPaddingRight();
         final int bottom = getHeight() - getPaddingBottom();
 
-        int holdersPadding = dpToPx(HORIZONTAL_PADDING_DP, getContext());
+        int holdersPadding = dpToPx(VERTICAL_PADDING_DP, getContext());
 
         if (mBarVisibility && mUnreadMessagesCount>0) {
             canvas.drawRect(0, top, getWidth(), top + mBarHeight, mBarPaint);

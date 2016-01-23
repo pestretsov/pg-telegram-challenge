@@ -8,10 +8,8 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
-import android.text.TextPaint;
 import android.text.format.DateUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -24,9 +22,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-import static org.pg.telegramchallenge.utils.Utils.dpToPx;
-import static org.pg.telegramchallenge.utils.Utils.getOrCompute;
-import static org.pg.telegramchallenge.utils.Utils.getOrElse;
+import static org.pg.telegramchallenge.utils.Utils.*;
 
 public class ChatListItemView extends View {
 
@@ -126,7 +122,7 @@ public class ChatListItemView extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         int width = getMeasuredWidth();
-        int heightWithoutPadding = dpToPx(40f, getContext());
+        int heightWithoutPadding = dpToPx(dpAvatarRadius*2, getContext());
         int widthWithoutPadding = width - getPaddingLeft() - getPaddingRight();
 
         setMeasuredDimension(widthWithoutPadding + getPaddingLeft() + getPaddingRight(),
@@ -350,26 +346,6 @@ public class ChatListItemView extends View {
 
     }
 
-    private String adjustString(String original, float totalWidth, float[] widths, float widthLimit, Paint paint){
-
-        if (totalWidth > widthLimit) {
-            int pos = 0;
-            String dots = "...";
-            float dotsLenght = paint.measureText(dots);
-            float adjustedTotalLength = 0;
-
-            while (adjustedTotalLength + widths[pos] < (widthLimit - dotsLenght)) {
-                adjustedTotalLength += widths[pos];
-                pos++;
-            }
-
-            return original.substring(0, pos).concat(dots);
-        }
-
-        return original;
-
-    }
-
     public void setTitle(String s){
         setTitle(s, true);
     }
@@ -458,20 +434,5 @@ public class ChatListItemView extends View {
     public void setStatus(ChatStatus status){
         mStatus = status;
         invalidate();
-    }
-
-    protected String getInitials(String s){
-        if (s == null)
-            return "";
-
-        StringBuilder initials = new StringBuilder();
-        for (String a: s.split(" ")){
-            if (!a.isEmpty())
-                initials.append(a.charAt(0));
-            if (initials.length()>=2)
-                break;
-        }
-
-        return initials.toString().toUpperCase();
     }
 }

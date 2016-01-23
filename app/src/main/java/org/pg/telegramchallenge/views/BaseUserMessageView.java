@@ -1,10 +1,8 @@
 package org.pg.telegramchallenge.views;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
+import android.content.res.TypedArray;
+import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
@@ -12,9 +10,9 @@ import android.text.TextPaint;
 import android.util.AttributeSet;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
-import org.pg.telegramchallenge.utils.Utils;
+import org.pg.telegramchallenge.R;
 
-import static org.pg.telegramchallenge.utils.Utils.dpToPx;
+import static org.pg.telegramchallenge.utils.Utils.*;
 
 /**
  * Created by dodger on 20.01.16.
@@ -30,6 +28,17 @@ public class BaseUserMessageView extends BaseChatItemView {
     private Paint mAvatarCirclePaint;
     private TextPaint mInitialsTextPaint;
     private int mAvatarColor = Color.BLUE;
+
+    private String mTitleText;
+
+    private TextPaint mTitleTextPaint;
+    private TextPaint mTimeTextPaint;
+
+    private float mTitleTextSize;
+    private float mTimeTextSize;
+
+    private int mTitleTextColor;
+    private int mTimeTextColor;
 
     public void setAvatarIsDisplayed(boolean avatarIsDisplayed) {
 
@@ -55,6 +64,20 @@ public class BaseUserMessageView extends BaseChatItemView {
     public BaseUserMessageView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
+        TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.BaseUserMessageView);
+
+        try {
+            mTitleText = getOrElse(attributes.getString(R.styleable.BaseUserMessageView_titleText), "");
+
+            mTitleTextSize = attributes.getDimension(R.styleable.BaseUserMessageView_titleTextSize, 0f);
+            mTimeTextSize = attributes.getDimension(R.styleable.BaseUserMessageView_timeTextSize, 0f);
+
+            mTimeTextColor = attributes.getColor(R.styleable.BaseUserMessageView_timeTextColor, Color.BLACK);
+            mTitleTextColor = attributes.getColor(R.styleable.BaseUserMessageView_titleTextColor, Color.BLACK);
+        } finally {
+            attributes.recycle();
+        }
+
         init();
     }
 
@@ -64,20 +87,22 @@ public class BaseUserMessageView extends BaseChatItemView {
         mAvatarCirclePaint.setColor(mAvatarColor);
         mAvatarCirclePaint.setAntiAlias(true);
 
-        int avatarImageRadius = Utils.dpToPx(dpAvatarRadius, getContext());
+        int avatarImageRadius = dpToPx(dpAvatarRadius, getContext());
         float avatarRatio = 1;
 
-        mInitialsTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        mInitialsTextPaint.setTextSize(avatarImageRadius * avatarRatio);
-        mInitialsTextPaint.setColor(Color.WHITE);
-        mInitialsTextPaint.setTextAlign(Paint.Align.CENTER);
+        mInitialsTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, avatarImageRadius * avatarRatio, Color.WHITE,
+                Paint.Align.CENTER, null, null);
+
+        mTitleTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTitleTextSize, mTitleTextColor, null, null, mBoldTypeface);
+
+        mTimeTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTimeTextSize, mTimeTextColor, null, null, null);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        int holdersPadding = dpToPx(HORIZONTAL_PADDING_DP, getContext());
+        int holdersPadding = dpToPx(VERTICAL_PADDING_DP, getContext());
 
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
@@ -87,7 +112,7 @@ public class BaseUserMessageView extends BaseChatItemView {
             if (isBarVisible || mDateVisibility)
                 height += holdersPadding;
 
-            height += 2*Utils.dpToPx(dpAvatarRadius, getContext());
+            height += 2*dpToPx(dpAvatarRadius, getContext());
         }
 
         setMeasuredDimension(width, height);
@@ -98,7 +123,8 @@ public class BaseUserMessageView extends BaseChatItemView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        int holdersPadding = dpToPx(HORIZONTAL_PADDING_DP, getContext());
+        Context c = getContext();
+        int holdersPadding = dpToPx(VERTICAL_PADDING_DP, c);
         boolean isBarVisible = mBarVisibility && mUnreadMessagesCount>0;
 
         int top = getPaddingTop() +
@@ -109,8 +135,8 @@ public class BaseUserMessageView extends BaseChatItemView {
         final int right = getWidth() - getPaddingRight();
         final int bottom = getHeight() - getPaddingBottom();
 
-        String initials = "KK";
-        int avatarImageRadius = Utils.dpToPx(dpAvatarRadius, getContext());
+        String initials = getInitials(mTitleText);
+        int avatarImageRadius = dpToPx(dpAvatarRadius, c);
         if (mAvatarIsDisplayed) {
             if (mAvatarDrawable == null) {
                 canvas.drawCircle(left + avatarImageRadius,
@@ -125,5 +151,10 @@ public class BaseUserMessageView extends BaseChatItemView {
                 mAvatarDrawable.setBounds(left, top, left + avatarImageRadius*2, top + avatarImageRadius*2);
                 mAvatarDrawable.draw(canvas);
             }
-        }    }
+
+            int titleStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, c);
+            int titleStartY = top + (int)mTitleTextSize;
+            canvas.drawText(mTitleText, titleStartX, titleStartY, mTitleTextPaint);
+        }
+    }
 }

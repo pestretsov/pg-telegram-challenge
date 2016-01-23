@@ -35,6 +35,11 @@
     </style>
 
     <style name="BaseUserMessageViewStyle" parent="BaseChatItemViewStyle">
+        <item name="titleTextSize">15sp</item>
+        <item name="titleTextColor">#569ace</item>
+
+        <item name="timeTextSize">13sp</item>
+        <item name="timeTextColor">#b2b2b2</item>
     </style>
 
     <!-- Base application theme. -->

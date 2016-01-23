@@ -1,19 +1,23 @@
 <resources>
+    <attr name="titleTextSize" format="dimension"/>
+    <attr name="titleText" format="string"/>
+    <attr name="timeTextSize" format="dimension"/>
+
     <declare-styleable name="ChatListItemView">
         <attr name="android:background"/>
         <attr name="android:textSize"/>
         <attr name="android:text"/>
         <attr name="android:textColor"/>
 
-        <attr name="titleTextSize" format="dimension"/>
-        <attr name="titleText" format="string"/>
+        <attr name="titleText"/>
+        <attr name="titleTextSize"/>
         <attr name="titleTextColor"/>
 
         <attr name="counterTextSize" format="dimension"/>
         <attr name="counterTextColor" format="color"/>
         <attr name="counterColor" format="color"/>
 
-        <attr name="timeTextSize" format="dimension"/>
+        <attr name="timeTextSize"/>
 
         <attr name="avatarColor" format="color"/>
         <attr name="myDrawable" format="reference"/>
@@ -30,6 +34,11 @@
     </declare-styleable>
 
     <declare-styleable name="BaseUserMessageView">
+        <attr name="titleText"/>
+        <attr name="titleTextSize"/>
+        <attr name="titleTextColor"/>
 
+        <attr name="timeTextSize"/>
+        <attr name="timeTextColor" format="color"/>
     </declare-styleable>
 </resources>
