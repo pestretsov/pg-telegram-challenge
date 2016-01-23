@@ -160,8 +160,7 @@ public class ChatListItemView extends View {
             mTextPaint.setTextSize(mTextHeight);
         }
 
-        mTimeTextPaint = new Paint(mTextPaint);
-        mTimeTextPaint.setTextSize(mTimeTextHeight);
+        mTimeTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTimeTextHeight, mTextColor, Paint.Align.RIGHT, null, null);
 
         mTitleTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTitleTextPaint.setColor(mTitleTextColor);
@@ -257,8 +256,8 @@ public class ChatListItemView extends View {
         float textStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, context);
 
         canvas.drawText(displayedTime,
-                right - mTimeTextPaint.measureText(displayedTime),
-                top + mTimeTextPaint.getTextSize() + betweenText + (mTitleTextHeight-mTimeTextHeight),
+                right,
+                top + mTitleTextHeight,
                 mTimeTextPaint);
 
         Drawable statusDrawable = null;

@@ -66,7 +66,7 @@ public class EmptyFragment extends Fragment {
                         mView.setDateVisability(bools[state%bools.length]);
                         break;
                     case 2:
-                        mView.setAvatarIsDisplayed(bools[state%bools.length]);
+                        mView.setAvatarAndTitleAreDisplayed(bools[state%bools.length]);
                         break;
                 }
                 bools[state%bools.length] = !bools[state%bools.length];

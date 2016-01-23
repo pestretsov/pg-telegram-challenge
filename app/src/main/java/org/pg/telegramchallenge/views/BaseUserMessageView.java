@@ -12,6 +12,9 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 import static org.pg.telegramchallenge.utils.Utils.*;
 
 /**
@@ -20,11 +23,14 @@ import static org.pg.telegramchallenge.utils.Utils.*;
 public class BaseUserMessageView extends BaseChatItemView {
 
     int mTextPadding = 16; // padding between avatar and text
+    private static final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
 
     private final int dpAvatarRadius = 20;
     private Drawable mAvatarDrawable = null;
 
-    private boolean mAvatarIsDisplayed = true;
+    private boolean mAvatarAndTitleVisible = true;
+    private boolean mTimeIsVisible = true;
+
     private Paint mAvatarCirclePaint;
     private TextPaint mInitialsTextPaint;
     private int mAvatarColor = Color.BLUE;
@@ -40,13 +46,21 @@ public class BaseUserMessageView extends BaseChatItemView {
     private int mTitleTextColor;
     private int mTimeTextColor;
 
-    public void setAvatarIsDisplayed(boolean avatarIsDisplayed) {
+    public void setAvatarAndTitleAreDisplayed(boolean avatarIsDisplayed) {
 
-        if (mAvatarIsDisplayed == avatarIsDisplayed)
+        if (mAvatarAndTitleVisible == avatarIsDisplayed)
             return;
 
-        this.mAvatarIsDisplayed = avatarIsDisplayed;
+        this.mAvatarAndTitleVisible = avatarIsDisplayed;
         requestLayout();
+        invalidate();
+    }
+
+    public void setTimeIsVisible(boolean timeIsVisible) {
+        if (timeIsVisible==mTimeIsVisible)
+            return;
+
+        mTimeIsVisible = timeIsVisible;
         invalidate();
     }
 
@@ -95,7 +109,7 @@ public class BaseUserMessageView extends BaseChatItemView {
 
         mTitleTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTitleTextSize, mTitleTextColor, null, null, mBoldTypeface);
 
-        mTimeTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTimeTextSize, mTimeTextColor, null, null, null);
+        mTimeTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTimeTextSize, mTimeTextColor, Paint.Align.RIGHT, null, null);
     }
 
     @Override
@@ -107,7 +121,7 @@ public class BaseUserMessageView extends BaseChatItemView {
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
 
-        if (mAvatarIsDisplayed) {
+        if (mAvatarAndTitleVisible) {
             boolean isBarVisible = mBarVisibility && mUnreadMessagesCount>0;
             if (isBarVisible || mDateVisibility)
                 height += holdersPadding;
@@ -137,7 +151,7 @@ public class BaseUserMessageView extends BaseChatItemView {
 
         String initials = getInitials(mTitleText);
         int avatarImageRadius = dpToPx(dpAvatarRadius, c);
-        if (mAvatarIsDisplayed) {
+        if (mAvatarAndTitleVisible) {
             if (mAvatarDrawable == null) {
                 canvas.drawCircle(left + avatarImageRadius,
                         (top + bottom) / 2,
@@ -155,6 +169,12 @@ public class BaseUserMessageView extends BaseChatItemView {
             int titleStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, c);
             int titleStartY = top + (int)mTitleTextSize;
             canvas.drawText(mTitleText, titleStartX, titleStartY, mTitleTextPaint);
+        }
+
+        if (mTimeIsVisible) {
+            int timeStartX = right;
+            int timeStartY = (int) (top + mTitleTextSize); // to align them
+            canvas.drawText(timeFormat.format(mDate.getTime()), timeStartX, timeStartY, mTimeTextPaint);
         }
     }
 }
