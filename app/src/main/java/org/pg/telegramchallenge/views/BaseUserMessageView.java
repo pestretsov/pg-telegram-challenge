@@ -28,10 +28,10 @@ public class BaseUserMessageView extends BaseChatItemView {
     int mTextPadding = 16; // padding between avatar and text
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
 
-    private final int dpAvatarRadius = 20;
+    protected final int dpAvatarRadius = 20;
     private Drawable mAvatarDrawable = null;
 
-    private boolean mAvatarAndTitleVisible = true;
+    protected boolean mAvatarAndTitleVisible = true;
     private boolean mTimeIsVisible = true;
 
     private Paint mAvatarCirclePaint;
@@ -162,12 +162,12 @@ public class BaseUserMessageView extends BaseChatItemView {
         if (mAvatarAndTitleVisible) {
             if (mAvatarDrawable == null) {
                 canvas.drawCircle(left + avatarImageRadius,
-                        (top + bottom) / 2,
+                        (top + avatarImageRadius),
                         avatarImageRadius,
                         mAvatarCirclePaint);
                 canvas.drawText(initials,
                         left + avatarImageRadius,
-                        (top + bottom) / 2 - (mInitialsTextPaint.descent() + mInitialsTextPaint.ascent())/2,
+                        (top + avatarImageRadius) - (mInitialsTextPaint.descent() + mInitialsTextPaint.ascent())/2,
                         mInitialsTextPaint);
             } else {
                 mAvatarDrawable.setBounds(left, top, left + avatarImageRadius*2, top + avatarImageRadius*2);
