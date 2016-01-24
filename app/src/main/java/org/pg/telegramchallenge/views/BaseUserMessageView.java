@@ -2,7 +2,10 @@ package org.pg.telegramchallenge.views;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
@@ -121,12 +124,17 @@ public class BaseUserMessageView extends BaseChatItemView {
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
 
+        boolean isBarOrDateVisible = (mBarVisibility && mUnreadMessagesCount>0) || mDateVisibility;
         if (mAvatarAndTitleVisible) {
-            boolean isBarVisible = mBarVisibility && mUnreadMessagesCount>0;
-            if (isBarVisible || mDateVisibility)
+            if (isBarOrDateVisible)
                 height += holdersPadding;
 
             height += 2*dpToPx(dpAvatarRadius, getContext());
+        } else if (mTimeIsVisible) {
+            if (isBarOrDateVisible)
+                height += holdersPadding;
+
+            height += mTimeTextSize;
         }
 
         setMeasuredDimension(width, height);
@@ -172,9 +180,8 @@ public class BaseUserMessageView extends BaseChatItemView {
         }
 
         if (mTimeIsVisible) {
-            int timeStartX = right;
             int timeStartY = (int) (top + mTitleTextSize); // to align them
-            canvas.drawText(timeFormat.format(mDate.getTime()), timeStartX, timeStartY, mTimeTextPaint);
+            canvas.drawText(timeFormat.format(mDate.getTime()), right, timeStartY, mTimeTextPaint);
         }
     }
 }
