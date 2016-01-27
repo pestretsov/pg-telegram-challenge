@@ -1,6 +1,11 @@
 package org.pg.telegramchallenge;
 
 
+import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -13,6 +18,7 @@ import android.view.ViewGroup;
 
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatListAdapter;
+import org.pg.telegramchallenge.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +29,7 @@ import java.util.Observer;
  * A simple {@link Fragment} subclass.
  */
 public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
-        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.ChatObserver {
+        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver {
 
     private RecyclerView chatListRecyclerView;
     private ChatListAdapter chatListAdapter;
@@ -32,8 +38,11 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem, visibleThreshold = 10;
     private boolean loading = true;
 
-    private int nextLimit = 50;
+    private int nextLimit = 20;
     private int nextOffset = 0;
+
+    //
+    private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
 
     public ObserverApplication getApplication(){
         return (ObserverApplication) getActivity().getApplication();
@@ -82,6 +91,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         chatListAdapter = new ChatListAdapter();
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
+        chatListRecyclerView.addItemDecoration(new ItemDivider(getContext()));
 
         chatListRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -114,6 +124,39 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         return view;
     }
 
+    public class ItemDivider extends RecyclerView.ItemDecoration {
+        private Drawable divider;
+
+        public ItemDivider(Context context) {
+            final TypedArray styledAttributes = context.obtainStyledAttributes(ATTRS);
+            divider = styledAttributes.getDrawable(0);
+            styledAttributes.recycle();
+        }
+
+        @Override
+        public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
+//            super.onDraw(c, parent, state);
+
+            int left = parent.getPaddingLeft() + Utils.dpToPx(20*2+16*2, getContext());
+            int right = parent.getWidth() - parent.getPaddingRight();
+
+            int total = parent.getChildCount();
+
+            for (int i = 0; i < total; i++) {
+                View child = parent.getChildAt(i);
+
+                RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
+
+                int top = child.getBottom() + params.bottomMargin;
+                int bottom = top + divider.getIntrinsicHeight();
+
+                divider.setBounds(left, top, right, bottom);
+
+                divider.draw(c);
+            }
+        }
+    }
+
     @Override
     public void proceed(TdApi.Error err) {
 
@@ -121,17 +164,12 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.UpdateNewMessage obj) {
-        chatListAdapter.updateMessage(obj.message);
         getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
+        chatListAdapter.updateMessage(obj.message);
     }
 
     @Override
     public void proceed(TdApi.Chats obj) {
-        chatListAdapter.changeData(obj.chats);
-    }
-
-    @Override
-    public void proceed(TdApi.Chat obj) {
-        chatListAdapter.updateData(obj);
+        chatListAdapter.changeData(obj.chats, nextOffset-nextLimit, nextOffset);
     }
 }

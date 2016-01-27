@@ -22,12 +22,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Observer;
 
 /**
  * Created by artemypestretsov on 1/4/16.
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
-        implements ObserverApplication.OnUpdateFileObserver{
+        implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver {
 
     private List<Long> chatList = new LinkedList<>();
     private Map<Long, TdApi.Chat> chatMap = new HashMap<>();
@@ -49,9 +50,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         return new ChatListVH(view);
     }
 
-    public void changeData(TdApi.Chat[] chatList) {
-
-//        this.chatList.addAll(Arrays.asList(chatList));
+    public void changeData(TdApi.Chat[] chatList, int left, int right) {
 
         for (TdApi.Chat chat: chatList) {
             chatMap.put(chat.id, chat);
@@ -62,20 +61,23 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     }
 
     public void updateMessage(TdApi.Message message) {
-        chatMap.get(message.chatId).topMessage = message;
+        if (chatMap.containsKey(message.chatId)) {
+            chatMap.get(message.chatId).topMessage = message;
+        }
     }
 
     public void updateData(TdApi.Chat chat) {
+        int position = 0;
         if (chatMap.containsKey(chat.id)) {
-            chatList.remove(chat.id);
+            position = chatList.indexOf(chat.id);
+            chatList.remove(position);
             chatList.add(0, chat.id);
         } else {
             chatMap.put(chat.id, chat);
             chatList.add(chat.id);
         }
 
-        // TODO: specify range for efficiency
-        notifyDataSetChanged();
+        this.notifyItemRangeChanged(0, position+1);
     }
 
     /**
@@ -105,7 +107,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             return;
         }
 
-
         TdApi.Chat currentChat = chatMap.get(chatList.get(position));
         if (currentChat.topMessage.message instanceof TdApi.MessageText) {
             holder.chatListItemView.setText(((TdApi.MessageText) currentChat.topMessage.message).text);
@@ -120,7 +121,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
         String title = "";
         if (currentChat.type instanceof TdApi.PrivateChatInfo) {
-            // TODO: MAYBE NO LAST NAME
             TdApi.PrivateChatInfo privateChat = (TdApi.PrivateChatInfo) currentChat.type;
             if (privateChat.user.firstName.length() > 0) {
                 title += privateChat.user.firstName;
@@ -172,6 +172,11 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             }
             i++;
         }
+    }
+
+    @Override
+    public void proceed(TdApi.Chat obj) {
+        updateData(obj);
     }
 
     public class ChatListVH extends RecyclerView.ViewHolder {
