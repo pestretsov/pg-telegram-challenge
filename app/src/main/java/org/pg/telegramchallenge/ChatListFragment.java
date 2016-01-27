@@ -2,7 +2,6 @@ package org.pg.telegramchallenge;
 
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -12,7 +11,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,10 +18,7 @@ import android.view.ViewGroup;
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatListAdapter;
 import org.pg.telegramchallenge.utils.Utils;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Observer;
+import org.pg.telegramchallenge.views.ChatListItemView;
 
 
 /**
@@ -127,25 +122,35 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         return view;
     }
 
-    public class ItemDivider extends RecyclerView.ItemDecoration {
-        private Drawable divider;
+    public static class ItemDivider extends RecyclerView.ItemDecoration {
+
+        private static Drawable mDivider;
+        private final Context mContext;
 
         public ItemDivider(Context context) {
+            mContext = context;
             final TypedArray styledAttributes = context.obtainStyledAttributes(ATTRS);
-            divider = styledAttributes.getDrawable(0);
+            if (mDivider == null) {
+                mDivider = styledAttributes.getDrawable(0);
+            }
             styledAttributes.recycle();
         }
 
         public ItemDivider(Context context, int resId) {
-            divider = ContextCompat.getDrawable(context, resId);
+            mContext = context;
+            if (mDivider == null) {
+                mDivider = ContextCompat.getDrawable(context, resId);
+            }
         }
 
         @Override
         public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
 //            super.onDraw(c, parent, state);
 
-            // TODO: ask roman, if we can use his fields
-            int left = parent.getPaddingLeft() + Utils.dpToPx(20*2+16*2, getContext());
+            int left = parent.getPaddingLeft();
+            left += Utils.dpToPx(ChatListItemView.dpAvatarRadius*2+ChatListItemView.mTextPadding, mContext);
+            left += mContext.getResources().getDimensionPixelSize(R.dimen.activity_horizontal_margin);
+
             int right = parent.getWidth() - parent.getPaddingRight();
 
             int total = parent.getChildCount();
@@ -155,10 +160,10 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
 
                 int top = child.getBottom() + params.bottomMargin;
-                int bottom = top + divider.getIntrinsicHeight();
+                int bottom = top + mDivider.getIntrinsicHeight();
 
-                divider.setBounds(left, top, right, bottom);
-                divider.draw(c);
+                mDivider.setBounds(left, top, right, bottom);
+                mDivider.draw(c);
             }
         }
     }

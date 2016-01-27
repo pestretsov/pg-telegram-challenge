@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="mister president, are you fucking kidding me?"
-        android:padding="16dp"
+        android:padding="@dimen/activity_horizontal_margin"
         />
 
 </LinearLayout>
