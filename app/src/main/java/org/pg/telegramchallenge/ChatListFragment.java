@@ -8,6 +8,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
@@ -91,7 +92,9 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         chatListAdapter = new ChatListAdapter();
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
-        chatListRecyclerView.addItemDecoration(new ItemDivider(getContext()));
+//        chatListRecyclerView.addItemDecoration(new ItemDivider(getContext()));
+
+        chatListRecyclerView.addItemDecoration(new ItemDivider(getContext(), R.drawable.chat_list_divider));
 
         chatListRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -133,15 +136,19 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
             styledAttributes.recycle();
         }
 
+        public ItemDivider(Context context, int resId) {
+            divider = ContextCompat.getDrawable(context, resId);
+        }
+
         @Override
         public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
 //            super.onDraw(c, parent, state);
 
+            // TODO: ask roman, if we can use his fields
             int left = parent.getPaddingLeft() + Utils.dpToPx(20*2+16*2, getContext());
             int right = parent.getWidth() - parent.getPaddingRight();
 
             int total = parent.getChildCount();
-
             for (int i = 0; i < total; i++) {
                 View child = parent.getChildAt(i);
 
@@ -151,7 +158,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 int bottom = top + divider.getIntrinsicHeight();
 
                 divider.setBounds(left, top, right, bottom);
-
                 divider.draw(c);
             }
         }
