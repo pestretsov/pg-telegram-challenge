@@ -28,7 +28,8 @@ import java.util.Observer;
  * Created by artemypestretsov on 1/4/16.
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
-        implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver {
+        implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
+        ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver {
 
     private List<Long> chatList = new LinkedList<>();
     private Map<Long, TdApi.Chat> chatMap = new HashMap<>();
@@ -50,8 +51,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         return new ChatListVH(view);
     }
 
-    public void changeData(TdApi.Chat[] chatList, int left, int right) {
-
+    public void changeData(TdApi.Chat[] chatList) {
         for (TdApi.Chat chat: chatList) {
             chatMap.put(chat.id, chat);
             this.chatList.add(chat.id);
@@ -64,15 +64,29 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         if (chatMap.containsKey(message.chatId)) {
             chatMap.get(message.chatId).topMessage = message;
         }
+        this.notifyItemChanged(chatList.indexOf(message.chatId));
+    }
+
+    public void updateChatTitle(TdApi.UpdateChatTitle title) {
+        if (chatMap.containsKey(title.chatId) && (chatMap.get(title.chatId).type instanceof TdApi.GroupChatInfo)) {
+            ((TdApi.GroupChatInfo) chatMap.get(title.chatId).type).groupChat.title = title.title;
+        }
+        this.notifyItemChanged(chatList.indexOf(title.chatId));
     }
 
     public void updateData(TdApi.Chat chat) {
         int position = 0;
         if (chatMap.containsKey(chat.id)) {
+
+            // rearrange items in list
             position = chatList.indexOf(chat.id);
             chatList.remove(position);
             chatList.add(0, chat.id);
+
+            // update Chat itself
+            chatMap.put(chat.id, chat);
         } else {
+            // add new Chat
             chatMap.put(chat.id, chat);
             chatList.add(chat.id);
         }
@@ -87,7 +101,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
      * @return true if had started downloading
      */
     private boolean handleAvatar(ChatListVH holder, TdApi.ProfilePhoto p) {
-
         if (!(p.small.path.isEmpty())) {
             holder.chatListItemView.setAvatarFilePath((p.small.path));
         } else {
@@ -115,8 +128,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         }
 
         Date date = new Date(Utils.timestampToMillis(currentChat.topMessage.date));
-        holder.chatListItemView.setDate(date);
 
+        holder.chatListItemView.setDate(date);
         holder.chatListItemView.setUnreadCount(currentChat.unreadCount);
 
         String title = "";
@@ -136,6 +149,15 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             TdApi.GroupChat groupChat = ((TdApi.GroupChatInfo) currentChat.type).groupChat;
             title = groupChat.title;
         }
+
+
+        holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+        if (ObserverApplication.userMe != null && currentChat.topMessage.fromId != ObserverApplication.userMe.id) {
+            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+        } else if (ObserverApplication.userMe != null && currentChat.topMessage.id > currentChat.lastReadOutboxMessageId) {
+            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
+        }
+
 
         handleAvatar(holder, getProfilePhoto(currentChat));
 
@@ -177,6 +199,23 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     @Override
     public void proceed(TdApi.Chat obj) {
         updateData(obj);
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateChatReadOutbox obj) {
+        if (chatMap.containsKey(obj.chatId)) {
+            chatMap.get(obj.chatId).lastReadOutboxMessageId = obj.lastReadOutboxMessageId;
+            this.notifyItemChanged(chatList.indexOf(obj.chatId));
+        }
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateChatReadInbox obj) {
+        if (chatMap.containsKey(obj.chatId)) {
+            chatMap.get(obj.chatId).lastReadInboxMessageId = obj.lastReadInboxMessageId;
+            chatMap.get(obj.chatId).unreadCount = obj.unreadCount;
+            this.notifyItemChanged(chatList.indexOf(obj.chatId));
+        }
     }
 
     public class ChatListVH extends RecyclerView.ViewHolder {

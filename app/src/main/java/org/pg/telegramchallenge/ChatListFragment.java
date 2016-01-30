@@ -25,16 +25,16 @@ import org.pg.telegramchallenge.views.ChatListItemView;
  * A simple {@link Fragment} subclass.
  */
 public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
-        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver {
+        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver {
 
     private RecyclerView chatListRecyclerView;
     private ChatListAdapter chatListAdapter;
     private LinearLayoutManager layoutManager;
 
-    private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem, visibleThreshold = 10;
+    private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem, visibleThreshold = 20;
     private boolean loading = true;
 
-    private int nextLimit = 20;
+    private int nextLimit = 50;
     private int nextOffset = 0;
 
     //
@@ -118,8 +118,30 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         });
 
         getApplication().sendRequest(new TdApi.GetChats(nextOffset, nextLimit));
+        getApplication().sendRequest(new TdApi.GetMe());
 
         return view;
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateChatTitle obj) {
+        chatListAdapter.updateChatTitle(obj);
+    }
+
+    @Override
+    public void proceed(TdApi.Error err) {
+
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateNewMessage obj) {
+        getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
+        chatListAdapter.updateMessage(obj.message);
+    }
+
+    @Override
+    public void proceed(TdApi.Chats obj) {
+        chatListAdapter.changeData(obj.chats);
     }
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {
@@ -166,21 +188,5 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 mDivider.draw(c);
             }
         }
-    }
-
-    @Override
-    public void proceed(TdApi.Error err) {
-
-    }
-
-    @Override
-    public void proceed(TdApi.UpdateNewMessage obj) {
-        getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
-        chatListAdapter.updateMessage(obj.message);
-    }
-
-    @Override
-    public void proceed(TdApi.Chats obj) {
-        chatListAdapter.changeData(obj.chats, nextOffset-nextLimit, nextOffset);
     }
 }

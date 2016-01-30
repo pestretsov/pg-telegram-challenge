@@ -268,6 +268,9 @@ public class ChatListItemView extends View {
             case DELIVERING:
                 statusDrawable = clockIcon;
                 break;
+            case READ:
+                statusDrawable = null;
+                break;
         }
 
         if (statusDrawable!=null) {

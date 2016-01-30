@@ -25,6 +25,8 @@ public class ObserverApplication extends Application implements Client.ResultHan
     public static volatile Context appContext;
     public static final String TAG = ObserverApplication.class.getSimpleName();
 
+    public static volatile TdApi.User userMe = null;
+
     static {
         try {
             System.loadLibrary("tdjni");
@@ -292,6 +294,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 if (object instanceof TdApi.UpdateUserAction) {
                     for (OnUpdateUserActionObserver observer : onUpdateUserActionObservers) {
                         observer.proceed((TdApi.UpdateUserAction) object);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateUser) {
+                    if (userMe == null) {
+                        userMe = ((TdApi.UpdateUser) object).user;
                     }
                     return;
                 }
