@@ -45,6 +45,7 @@
     <style name="TextUserMessageViewStyle" parent="BaseUserMessageViewStyle">
         <item name="android:textSize">15sp</item>
         <item name="android:textColor">#333333</item>
+        <item name="linkColor">#569ace</item>
     </style>
 
     <!-- Base application theme. -->

@@ -31,13 +31,13 @@
             android:padding="16dp"
             auto:titleText="Artemy Pestrtsov"
             android:layout_below="@id/sample_view_2"
-            android:text="Privet, rodnaya, ahahaha"
+            android:text="Privet, @rodnaya, @ahahaha"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
     <org.pg.telegramchallenge.views.TextUserMessageView
             style="@style/TextUserMessageViewStyle"
-            android:text="Privet, top kek. Ya lubil tebya kak rodnogo, ah ti gnida neblagodarnaya"
+            android:text="#Privet, @top @kek. #Ya \@lubil @tebya kak rodnogo, ah ti gnida neblagodarnaya"
             android:padding="16dp"
             auto:titleText="Top Kek"
             android:layout_width="match_parent"

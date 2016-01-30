@@ -5,9 +5,14 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.text.*;
+import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 
 import org.pg.telegramchallenge.R;
+
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+
 import static org.pg.telegramchallenge.utils.Utils.*;
 
 /**
@@ -15,13 +20,24 @@ import static org.pg.telegramchallenge.utils.Utils.*;
  */
 public class TextUserMessageView extends BaseUserMessageView {
 
-    private SpannableStringBuilder mText = new SpannableStringBuilder("TOP KEK");
+    private SpannableStringBuilder mText = new SpannableStringBuilder();
 
     private TextPaint mTextPaint;
     private float mTextSize;
     private int mTextColor;
 
+    private int mLinkColor;
+    private ForegroundColorSpan mLinkForegroundSpan;
+
+    private static final Pattern mMentionPattern = Pattern.compile("\\B\\@([\\w\\-]+)", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
+    private static final Pattern mHashtagPattern = Pattern.compile("\\B\\#([\\w\\-]+)", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
+
     private Layout mTextLayout;
+    private ArrayList<SpanDescriptor> mMentionDescriptors;
+    private ArrayList<SpanDescriptor> mHashtagDescriptors;
+
+    private static final ArrayList<ForegroundColorSpan> mMentionForegroundSpans = new ArrayList<>();
+    private static final ArrayList<ForegroundColorSpan> mHashtagForegroundSpans = new ArrayList();
 
     public TextUserMessageView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -32,6 +48,8 @@ public class TextUserMessageView extends BaseUserMessageView {
             mTextSize = attributes.getDimension(R.styleable.TextUserMessageView_android_textSize, 0f);
             mTextColor = attributes.getColor(R.styleable.TextUserMessageView_android_textColor, Color.BLACK);
             mText = new SpannableStringBuilder(getOrElse(attributes.getString(R.styleable.TextUserMessageView_android_text),""));
+
+            mLinkColor = attributes.getColor(R.styleable.TextUserMessageView_linkColor, Color.BLUE);
         } finally {
             attributes.recycle();
         }
@@ -61,6 +79,9 @@ public class TextUserMessageView extends BaseUserMessageView {
 
     private void init() {
         mTextPaint = getTextPaint(TextPaint.ANTI_ALIAS_FLAG, mTextSize, mTextColor, null, null, null);
+
+        mLinkForegroundSpan = new ForegroundColorSpan(mLinkColor);
+        setText(mText, false);
     }
 
     @Override
@@ -86,9 +107,42 @@ public class TextUserMessageView extends BaseUserMessageView {
         canvas.restore();
     }
 
-    public void setText(String s) {
-        mText.clear();
-        mText.append(s);
+    public void setText(CharSequence s) {
+        setText(s, false);
+    }
+
+    private void setText(CharSequence s, boolean invalidate) {
+        mText.clearSpans();
+        if (s!=mText) {
+            mText.clear();
+            mText.append(s);
+        }
+
+        mMentionDescriptors = getSpans(mText, mMentionPattern);
+        mHashtagDescriptors = getSpans(mText, mHashtagPattern);
+
+        while (mMentionForegroundSpans.size()<mMentionDescriptors.size()) {
+            mMentionForegroundSpans.add(new ForegroundColorSpan(mLinkColor));
+        }
+
+        while (mHashtagForegroundSpans.size()<mHashtagDescriptors.size()){
+            mHashtagForegroundSpans.add(new ForegroundColorSpan(mLinkColor));
+        }
+
+        for (int i = 0; i< mMentionDescriptors.size(); i++) {
+            mText.setSpan(mMentionForegroundSpans.get(i),
+                    mMentionDescriptors.get(i).getStart(), mMentionDescriptors.get(i).getEnd(),
+                    Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        }
+
+        for (int i = 0; i< mHashtagDescriptors.size(); i++) {
+            mText.setSpan(mHashtagForegroundSpans.get(i),
+                    mHashtagDescriptors.get(i).getStart(), mHashtagDescriptors.get(i).getEnd(),
+                    Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        }
+
+        if (!invalidate)
+            return;
 
         invalidate();
         requestLayout();

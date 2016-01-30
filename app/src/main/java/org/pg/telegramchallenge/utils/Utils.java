@@ -6,6 +6,10 @@ import android.graphics.Typeface;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Created by roman on 05.01.16.
  */
@@ -116,5 +120,53 @@ public class Utils {
         }
 
         return original;
+    }
+
+    public static class SpanDescriptor{
+        private final String mContent;
+        private final int mEnd;
+        private final int mStart;
+
+        public SpanDescriptor(String content, int start, int end) {
+            if (content == null) {
+                throw new IllegalArgumentException("Content cannot be null in mention!");
+            }
+
+            if (start>=end) {
+                throw new IllegalArgumentException("start is greater or equal to end!");
+            }
+
+            mContent = content;
+            mStart = start;
+            mEnd = end;
+        }
+
+        public int getEnd() {
+            return mEnd;
+        }
+
+        public int getStart() {
+            return mStart;
+        }
+
+        public String getContent() {
+            return mContent;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("[\"%s\", start: %d, end: %d]", mContent, mStart, mEnd);
+        }
+    }
+
+    public static ArrayList<SpanDescriptor> getSpans(CharSequence s, Pattern p){
+        Matcher matcher = p.matcher(s);
+
+        ArrayList<SpanDescriptor> spans = new ArrayList<>();
+        while (matcher.find()) {
+            spans.add(new SpanDescriptor(matcher.group(), matcher.start(), matcher.end()));
+        }
+
+        return spans;
     }
 }
