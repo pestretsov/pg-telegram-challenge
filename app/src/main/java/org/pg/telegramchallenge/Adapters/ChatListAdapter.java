@@ -60,11 +60,29 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         this.notifyDataSetChanged();
     }
 
+    public ObserverApplication getApplication() {
+        return context;
+    }
+
     public void updateMessage(TdApi.Message message) {
         if (chatMap.containsKey(message.chatId)) {
-            chatMap.get(message.chatId).topMessage = message;
+            TdApi.Chat chat = chatMap.get(message.chatId);
+
+            chat.topMessage = message;
+
+            if (ObserverApplication.userMe != null && message.fromId != ObserverApplication.userMe.id) {
+                chat.unreadCount += 1;
+            }
+
+            if (ObserverApplication.userMe != null && message.chatId == ObserverApplication.userMe.id){
+                chat.lastReadInboxMessageId = chat.topMessage.id;
+                chat.lastReadOutboxMessageId = chat.lastReadInboxMessageId;
+            }
+
+            updateData(chat);
+        } else {
+            getApplication().sendRequest(new TdApi.GetChat(message.chatId));
         }
-        this.notifyItemChanged(chatList.indexOf(message.chatId));
     }
 
     public void updateChatTitle(TdApi.UpdateChatTitle title) {

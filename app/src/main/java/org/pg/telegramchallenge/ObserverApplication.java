@@ -122,6 +122,11 @@ public class ObserverApplication extends Application implements Client.ResultHan
         void proceed(TdApi.UpdateFile obj);
     }
 
+    private volatile List<OnUpdateChatPhotoObserver> onUpdateChatPhotoObservers = new LinkedList<>();
+    public interface OnUpdateChatPhotoObserver {
+        void proceed(TdApi.UpdateChatPhoto obj);
+    }
+
     /** for future
      * there can be multimap of classes of tdlib
      * assosiated with observers which have to get
@@ -165,6 +170,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
             onUpdateChatTitleObservers.add((OnUpdateChatTitleObserver) obs);
         }
 
+        if (obs instanceof OnUpdateChatPhotoObserver) {
+            onUpdateChatPhotoObservers.add((OnUpdateChatPhotoObserver) obs);
+        }
+
         if (obs instanceof ChatsObserver) {
             chatsObservers.add((ChatsObserver) obs);
         }
@@ -202,6 +211,11 @@ public class ObserverApplication extends Application implements Client.ResultHan
         if (obs instanceof OnUpdateChatTitleObserver) {
             onUpdateChatTitleObservers.remove(obs);
         }
+
+        if (obs instanceof OnUpdateChatPhotoObserver) {
+            onUpdateChatPhotoObservers.remove(obs);
+        }
+
 
         if (obs instanceof ChatsObserver) {
             chatsObservers.remove(obs);
@@ -294,6 +308,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 if (object instanceof TdApi.UpdateUserAction) {
                     for (OnUpdateUserActionObserver observer : onUpdateUserActionObservers) {
                         observer.proceed((TdApi.UpdateUserAction) object);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateChatPhoto) {
+                    for (OnUpdateChatPhotoObserver observer : onUpdateChatPhotoObservers) {
+                        observer.proceed((TdApi.UpdateChatPhoto) object);
                     }
                     return;
                 }

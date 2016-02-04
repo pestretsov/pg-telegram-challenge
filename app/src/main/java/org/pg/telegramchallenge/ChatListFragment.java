@@ -37,7 +37,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private int nextLimit = 50;
     private int nextOffset = 0;
 
-    //
     private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
 
     public ObserverApplication getApplication(){
@@ -78,7 +77,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
 
-
         layoutManager = new LinearLayoutManager(getActivity());
         chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chatListRecyclerView);
         // if changeAnimation is enabled it looks like shit; try it yourself
@@ -87,8 +85,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         chatListAdapter = new ChatListAdapter();
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
-//        chatListRecyclerView.addItemDecoration(new ItemDivider(getContext()));
-
         chatListRecyclerView.addItemDecoration(new ItemDivider(getContext(), R.drawable.chat_list_divider));
 
         chatListRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -118,7 +114,9 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         });
 
         getApplication().sendRequest(new TdApi.GetChats(nextOffset, nextLimit));
-        getApplication().sendRequest(new TdApi.GetMe());
+
+        // TODO: decide whether its needed or not
+//        getApplication().sendRequest(new TdApi.GetMe());
 
         return view;
     }
@@ -135,7 +133,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.UpdateNewMessage obj) {
-        getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
+//        getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
         chatListAdapter.updateMessage(obj.message);
     }
 
