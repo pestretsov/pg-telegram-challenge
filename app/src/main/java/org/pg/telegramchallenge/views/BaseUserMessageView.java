@@ -7,10 +7,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.Nullable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
@@ -31,7 +33,7 @@ public class BaseUserMessageView extends BaseChatItemView {
     protected final int dpAvatarRadius = 20;
     private Drawable mAvatarDrawable = null;
 
-    protected boolean mAvatarAndTitleVisible = true;
+    protected boolean mDetailsVisibility = true;
     private boolean mTimeIsVisible = true;
 
     private Paint mAvatarCirclePaint;
@@ -49,21 +51,15 @@ public class BaseUserMessageView extends BaseChatItemView {
     private int mTitleTextColor;
     private int mTimeTextColor;
 
-    public void setAvatarAndTitleAreDisplayed(boolean avatarIsDisplayed) {
+    private String mAvatarImageFilePath;
 
-        if (mAvatarAndTitleVisible == avatarIsDisplayed)
+    public void setDetailsVisibility(boolean isVisible) {
+
+        if (mDetailsVisibility == isVisible)
             return;
 
-        this.mAvatarAndTitleVisible = avatarIsDisplayed;
+        this.mDetailsVisibility = isVisible;
         requestLayout();
-        invalidate();
-    }
-
-    public void setTimeIsVisible(boolean timeIsVisible) {
-        if (timeIsVisible==mTimeIsVisible)
-            return;
-
-        mTimeIsVisible = timeIsVisible;
         invalidate();
     }
 
@@ -125,16 +121,11 @@ public class BaseUserMessageView extends BaseChatItemView {
         int height = getMeasuredHeight();
 
         boolean isBarOrDateVisible = (mBarVisibility && mUnreadMessagesCount>0) || mDateVisibility;
-        if (mAvatarAndTitleVisible) {
+        if (mDetailsVisibility) {
             if (isBarOrDateVisible)
                 height += holdersPadding;
 
             height += 2*dpToPx(dpAvatarRadius, getContext());
-        } else if (mTimeIsVisible) {
-            if (isBarOrDateVisible)
-                height += holdersPadding;
-
-            height += mTimeTextSize;
         }
 
         setMeasuredDimension(width, height);
@@ -159,7 +150,7 @@ public class BaseUserMessageView extends BaseChatItemView {
 
         String initials = getInitials(mTitleText);
         int avatarImageRadius = dpToPx(dpAvatarRadius, c);
-        if (mAvatarAndTitleVisible) {
+        if (mDetailsVisibility) {
             if (mAvatarDrawable == null) {
                 canvas.drawCircle(left + avatarImageRadius,
                         (top + avatarImageRadius),
@@ -177,11 +168,25 @@ public class BaseUserMessageView extends BaseChatItemView {
             int titleStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, c);
             int titleStartY = top + (int)mTitleTextSize;
             canvas.drawText(mTitleText, titleStartX, titleStartY, mTitleTextPaint);
-        }
 
-        if (mTimeIsVisible) {
             int timeStartY = (int) (top + mTitleTextSize); // to align them
             canvas.drawText(timeFormat.format(mDate.getTime()), right, timeStartY, mTimeTextPaint);
         }
+    }
+
+    public void setAvatarFilePath(@Nullable String path){
+        mAvatarImageFilePath = path;
+
+        if (mAvatarImageFilePath == null) {
+            mAvatarDrawable = null;
+            invalidate();
+            return;
+        }
+
+        Glide.with(getContext())
+                .load(mAvatarImageFilePath)
+                .asBitmap()
+                .fitCenter()
+                .into(glideTarget);
     }
 }

@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import org.pg.telegramchallenge.views.BaseChatItemView;
 import org.pg.telegramchallenge.views.BaseUserMessageView;
 import org.pg.telegramchallenge.views.ChatListItemView;
-import org.pg.telegramchallenge.views.TextUserMessageView;
 
 
 /**
@@ -53,30 +52,16 @@ public class EmptyFragment extends Fragment {
 
         BaseChatItemView messageView = (BaseChatItemView) view.findViewById(R.id.message);
         messageView.setOnClickListener(new View.OnClickListener() {
-            int state = 0;
-            StringBuilder prev = new StringBuilder();
-            boolean[] bools = new boolean[3];
+
+            boolean b = false;
             @Override
             public void onClick(View v) {
-                state++;
-//                BaseUserMessageView mView = (BaseUserMessageView) v;
-//                switch (state%bools.length) {
-//                    case 0:
-//                        mView.setBarVisability(bools[state%bools.length]);
-//                        break;
-//                    case 1:
-//                        mView.setDateVisability(bools[state%bools.length]);
-//                        break;
-//                    case 2:
-//                        mView.setAvatarAndTitleAreDisplayed(bools[state%bools.length]);
-//                        break;
-//                }
-//                bools[state%bools.length] = !bools[state%bools.length];
+                ((BaseChatItemView) v).setDateVisability(b);
+                ((BaseChatItemView) v).setBarVisability(b);
+                ((BaseUserMessageView) v).setDetailsVisibility(b);
 
-                TextUserMessageView textUserMessageView = (TextUserMessageView) v;
-                prev.append(Integer.toString(state++));
-                prev.append(' ');
-                textUserMessageView.setText(prev.toString());
+                b = !b;
+
             }
         });
 

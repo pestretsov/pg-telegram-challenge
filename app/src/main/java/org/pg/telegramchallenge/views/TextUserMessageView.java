@@ -5,9 +5,16 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.text.*;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
+import android.text.util.Linkify;
 import android.util.AttributeSet;
 
+import android.util.Log;
+import android.view.MotionEvent;
+import android.widget.TextView;
+import android.widget.Toast;
 import org.pg.telegramchallenge.R;
 
 import java.util.ArrayList;
@@ -20,6 +27,7 @@ import static org.pg.telegramchallenge.utils.Utils.*;
  */
 public class TextUserMessageView extends BaseUserMessageView {
 
+    private static final String TAG = TextUserMessageView.class.getSimpleName();
     private SpannableStringBuilder mText = new SpannableStringBuilder();
 
     private TextPaint mTextPaint;
@@ -72,13 +80,14 @@ public class TextUserMessageView extends BaseUserMessageView {
         }
 
         int height = getMeasuredHeight();
-        height += mTextLayout.getHeight() - mTextSize; // textSize is for one line
+        height += mTextLayout.getHeight() - (mDetailsVisibility?mTextSize:0); // textSize is for one line
 
         setMeasuredDimension(width, height);
     }
 
     private void init() {
         mTextPaint = getTextPaint(TextPaint.ANTI_ALIAS_FLAG, mTextSize, mTextColor, null, null, null);
+        mTextPaint.linkColor = mLinkColor;
 
         mLinkForegroundSpan = new ForegroundColorSpan(mLinkColor);
         setText(mText, false);
@@ -102,13 +111,55 @@ public class TextUserMessageView extends BaseUserMessageView {
 
         canvas.save();
         int avatarDiameter = dpToPx(dpAvatarRadius*2, c);
-        canvas.translate(left + avatarDiameter + dpToPx(mTextPadding, c), top + avatarDiameter - mTextSize);
+        float textStartY = top + (mDetailsVisibility ? (avatarDiameter - mTextSize) :0);
+        canvas.translate(left + avatarDiameter + dpToPx(mTextPadding, c), textStartY);
         mTextLayout.draw(canvas);
         canvas.restore();
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+
+        final Context context = getContext();
+        int holdersPadding = dpToPx(VERTICAL_PADDING_DP, context);
+        int avatarDiameter = dpToPx(dpAvatarRadius*2, context);
+
+        boolean isBarVisible = mBarVisibility && mUnreadMessagesCount>0;
+        int top = getPaddingTop() +
+                (isBarVisible ? mBarHeight + holdersPadding:0) +
+                (mDateVisibility ? mDatePlaceholderHeight + holdersPadding:0);
+        final int left = getPaddingLeft();
+
+        float x = event.getX(), y = event.getY();
+
+        float textStartY = top + (mDetailsVisibility ? (avatarDiameter - mTextSize) :0);
+        int textStartX = left + avatarDiameter + dpToPx(mTextPadding, context);
+        boolean hitText = y - textStartY >0 && y - textStartY <mTextLayout.getHeight();
+        hitText &= x - textStartX>0 && x-textStartX < mTextLayout.getWidth();
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if (hitText) {
+                    Log.d(TAG, mText.toString());
+//                    Toast.makeText(context, mTextLayout.getText(), Toast.LENGTH_SHORT).show();
+
+                    int lineNum = mTextLayout.getLineForVertical(((int) (y - textStartY)));
+                    int clickedTextOff = mTextLayout.getOffsetForHorizontal(lineNum, x - textStartX);
+
+                    ClickableSpan[] spans = mText.getSpans(clickedTextOff, clickedTextOff, ClickableSpan.class);
+                    if (spans.length>0) {
+                        spans[0].onClick(this);
+                        return true;
+                    }
+                }
+                break;
+        }
+
+        return super.onTouchEvent(event);
+    }
+
     public void setText(CharSequence s) {
-        setText(s, false);
+        setText(s, true);
     }
 
     private void setText(CharSequence s, boolean invalidate) {
@@ -117,6 +168,8 @@ public class TextUserMessageView extends BaseUserMessageView {
             mText.clear();
             mText.append(s);
         }
+
+        Linkify.addLinks(mText, Linkify.WEB_URLS|Linkify.PHONE_NUMBERS);
 
         mMentionDescriptors = getSpans(mText, mMentionPattern);
         mHashtagDescriptors = getSpans(mText, mHashtagPattern);
