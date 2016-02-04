@@ -4,6 +4,21 @@
     android:layout_height="match_parent"
     tools:context="org.pg.telegramchallenge.ChatListFragment">
 
+    <!--<android.support.v4.widget.DrawerLayout-->
+        <!--xmlns:android="http://schemas.android.com/apk/res/android"-->
+        <!--xmlns:app="http://schemas.android.com/apk/res-auto"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:fitsSystemWindows="true">-->
+
+        <!--&lt;!&ndash; your content layout &ndash;&gt;-->
+
+        <!--<android.support.design.widget.NavigationView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:layout_gravity="start"/>-->
+    <!--</android.support.v4.widget.DrawerLayout>-->
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/chatListRecyclerView"
         android:layout_height="match_parent"

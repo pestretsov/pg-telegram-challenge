@@ -31,8 +31,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
         ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver {
 
-    private List<Long> chatList = new LinkedList<>();
-    private Map<Long, TdApi.Chat> chatMap = new HashMap<>();
+    private volatile List<Long> chatList = new LinkedList<>();
+    private volatile Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
 
@@ -51,13 +51,19 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         return new ChatListVH(view);
     }
 
-    public void changeData(TdApi.Chat[] chatList) {
-        for (TdApi.Chat chat: chatList) {
+    public void changeData(int left, TdApi.Chat[] chats) {
+        int position = left;
+        for (TdApi.Chat chat: chats) {
             chatMap.put(chat.id, chat);
-            this.chatList.add(chat.id);
+            chatList.add(chat.id);
+
+            // TODO: ROMAN first -- comment next 2 lines:
+            this.notifyItemChanged(position);
+            position += 1;
         }
 
-        this.notifyDataSetChanged();
+        // TODO: ROMAN second -- uncomment next line:
+//        this.notifyItemRangeInserted(left, chats.length);
     }
 
     public ObserverApplication getApplication() {
@@ -98,17 +104,16 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
             // rearrange items in list
             position = chatList.indexOf(chat.id);
-            chatList.remove(position);
+            chatList.remove(chat.id);
             chatList.add(0, chat.id);
 
             // update Chat itself
             chatMap.put(chat.id, chat);
         } else {
             // add new Chat
+            chatList.add(0, chat.id);
             chatMap.put(chat.id, chat);
-            chatList.add(chat.id);
         }
-
         this.notifyItemRangeChanged(0, position+1);
     }
 
@@ -168,6 +173,10 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             title = groupChat.title;
         }
 
+        // no chat name <=> DELETED
+        if (title.length() == 0) {
+            title = "DELETED";
+        }
 
         holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
         if (ObserverApplication.userMe != null && currentChat.topMessage.fromId != ObserverApplication.userMe.id) {
@@ -216,7 +225,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
     @Override
     public void proceed(TdApi.Chat obj) {
-        updateData(obj);
+        if (!chatMap.containsKey(obj.id))
+            updateData(obj);
     }
 
     @Override

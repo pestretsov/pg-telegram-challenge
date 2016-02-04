@@ -8,6 +8,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
@@ -27,14 +29,21 @@ import org.pg.telegramchallenge.views.ChatListItemView;
 public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
         ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver {
 
+    private ActionBar actionBar;
+
     private RecyclerView chatListRecyclerView;
     private ChatListAdapter chatListAdapter;
     private LinearLayoutManager layoutManager;
 
-    private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem, visibleThreshold = 20;
+    private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem;
+
+    // TODO: ROMAN -- change to 20 (25)
+    private int visibleThreshold = 15;
     private boolean loading = true;
 
-    private int nextLimit = 50;
+
+    // TODO: ROMAN -- change to 50
+    private int nextLimit = 20;
     private int nextOffset = 0;
 
     private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
@@ -76,6 +85,12 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
+
+        actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setTitle("Messages");
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 
         layoutManager = new LinearLayoutManager(getActivity());
         chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chatListRecyclerView);
@@ -133,13 +148,12 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.UpdateNewMessage obj) {
-//        getApplication().sendRequest(new TdApi.GetChat(obj.message.chatId));
         chatListAdapter.updateMessage(obj.message);
     }
 
     @Override
     public void proceed(TdApi.Chats obj) {
-        chatListAdapter.changeData(obj.chats);
+        chatListAdapter.changeData(nextOffset, obj.chats);
     }
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {
