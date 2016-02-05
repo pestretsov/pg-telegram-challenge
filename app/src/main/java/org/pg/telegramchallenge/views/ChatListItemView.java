@@ -15,7 +15,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
-import org.pg.telegramchallenge.utils.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -27,13 +26,18 @@ import static org.pg.telegramchallenge.utils.Utils.*;
 public class ChatListItemView extends View {
 
     private static final String TAG = ChatListItemView.class.getSimpleName();
+    private static String SINGLE_TYPING_MESSAGE ,CHAT_SINGLE_TYPING_MESSAGE, CHAT_FEW_TYPING_MESSAGE;
+
     private Paint mCounterTextPaint;
+    private boolean mIsGroupChat = false;
+    private boolean mIsTyping = false;
+    private String[] mAuthors = null;
 
     public ChatStatus getStatus() {
         return mStatus;
     }
 
-    public enum ChatStatus{
+    public enum ChatStatus {
         DELIVERING, READ, UNREAD;
     }
 
@@ -63,9 +67,9 @@ public class ChatListItemView extends View {
 
     // mText is for message text, mTitleText is for name
     private String mText, mTitleText;
-    private float textLength, titleTextLength;
+    private float titleTextLength;
 
-    private float[] mTextWidths, mTitleTextWidths;
+    private float[] mTitleTextWidths;
     private Calendar mDate;
 
     private int unread = 0;
@@ -73,7 +77,7 @@ public class ChatListItemView extends View {
     private String avatarImageFilePath = null;
     ViewTarget<ChatListItemView, Bitmap> glideTarget;
 
-    private static Drawable clockIcon, bageIcon;
+    private static Drawable clockIcon, bageIcon, groupIcon;
     private Drawable avatarDrawable = null;
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
     private int mCounterColor;
@@ -81,6 +85,7 @@ public class ChatListItemView extends View {
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy", Locale.ENGLISH);
     private final Rect bounds = new Rect();
+    private final StringBuilder mBuilder = new StringBuilder();
 
     public ChatListItemView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -115,6 +120,12 @@ public class ChatListItemView extends View {
         setTitle(title, false);
 
         mDate = Calendar.getInstance();
+
+        if (SINGLE_TYPING_MESSAGE==null || CHAT_SINGLE_TYPING_MESSAGE == null || CHAT_FEW_TYPING_MESSAGE==null) {
+            SINGLE_TYPING_MESSAGE = context.getString(R.string.single_typing_message);
+            CHAT_SINGLE_TYPING_MESSAGE = context.getString(R.string.chat_single_typing_message);
+            CHAT_FEW_TYPING_MESSAGE = context.getString(R.string.chat_few_typing_message);
+        }
     }
 
     @Override
@@ -129,28 +140,22 @@ public class ChatListItemView extends View {
                 heightWithoutPadding + getPaddingTop() + getPaddingBottom());
     }
 
-    private final Utils.Computable<Drawable> clockComputable = new Utils.Computable<Drawable>() {
-        @Override
-        public Drawable compute() {
-            return getResources().getDrawable(R.drawable.ic_clock);
-        }
-    };
-
-    private final Utils.Computable<Drawable> bageComputable = new Utils.Computable<Drawable>() {
-        @Override
-        public Drawable compute() {
-            return getResources().getDrawable(R.drawable.ic_badge);
-        }
-    };
-
     protected void init(){
         // size of avatar letters / avatar radius
         float avatarRatio = 1;
 
-        clockIcon = getOrCompute(clockIcon, clockComputable);
+        if (clockIcon == null) {
+            clockIcon = getResources().getDrawable(R.drawable.ic_clock);
+        }
 
-        bageIcon = getOrCompute(bageIcon, bageComputable);
-        bageIcon.setColorFilter(bageColor, PorterDuff.Mode.SRC_ATOP);
+        if (bageIcon == null) {
+            bageIcon = getResources().getDrawable(R.drawable.ic_badge);
+            bageIcon.setColorFilter(bageColor, PorterDuff.Mode.SRC_ATOP);
+        }
+
+        if (groupIcon == null) {
+            groupIcon = getResources().getDrawable(R.drawable.ic_group);
+        }
 
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setColor(mTextColor);
@@ -337,14 +342,47 @@ public class ChatListItemView extends View {
             textEndX = right;
         }
 
+        String adjustedString, unadjustedString;
         float maxTextLength = textEndX - textStartX;
-        String adjustedString = adjustString(mText, textLength, mTextWidths, maxTextLength, mTextPaint);
-        canvas.drawText(adjustedString, textStartX, bottom - betweenText, mTextPaint);
 
-        // constant dp for now; mb shoul change that
-        float maxTitleTextLength = - textStartX + (right - dpToPx(85, context));
-        String adjustedTitle = adjustString(mTitleText, titleTextLength, mTitleTextWidths, maxTitleTextLength, mTitleTextPaint);
-        canvas.drawText(adjustedTitle, textStartX, top + mTitleTextHeight + betweenText, mTitleTextPaint);
+        if (mIsTyping) {
+            mTextPaint.setColor(bageColor);
+            if (mIsGroupChat){
+                mBuilder.setLength(0);
+                for (String s : mAuthors){
+                    if (mBuilder.length()!=0) {
+                        mBuilder.append(',');
+                        mBuilder.append(' ');
+                    }
+                    mBuilder.append(s);
+                }
+                mBuilder.append(' ');
+                mBuilder.append(mAuthors.length>1 ? CHAT_FEW_TYPING_MESSAGE:CHAT_SINGLE_TYPING_MESSAGE);
+
+                unadjustedString = mBuilder.toString();
+            } else {
+                unadjustedString = SINGLE_TYPING_MESSAGE;
+            }
+        } else {
+            mTextPaint.setColor(mTextColor);
+            unadjustedString = mText;
+        }
+
+        adjustedString = adjustString(unadjustedString, maxTextLength, mTextPaint);
+        canvas.drawText(adjustedString, textStartX, bottom, mTextPaint);
+
+        // constant dp for now; mb should change that
+        if (mIsGroupChat) {
+            groupIcon.setBounds((int)textStartX,
+                    (int)(top + mTitleTextHeight - groupIcon.getIntrinsicHeight()),
+                    (int)(textStartX+groupIcon.getIntrinsicWidth()),
+                    (int)(top + mTitleTextHeight));
+            groupIcon.draw(canvas);
+        }
+
+        float maxTitleTextLength = - (textStartX + (mIsGroupChat?mTitleTextHeight:0)) + (right - dpToPx(85, context));
+        String adjustedTitle = adjustString(mTitleText, maxTitleTextLength, mTitleTextPaint);
+        canvas.drawText(adjustedTitle, textStartX + (mIsGroupChat?mTitleTextHeight:0), top + mTitleTextHeight + betweenText, mTitleTextPaint);
 
     }
 
@@ -354,12 +392,6 @@ public class ChatListItemView extends View {
 
     private void setTitle(String s, boolean invalidate) {
         mTitleText = s;
-        mTitleTextWidths = new float[mTitleText.length()];
-        if (mTitleTextPaint!=null) {
-            mTitleTextPaint.getTextWidths(mTitleText, 0, mTitleText.length(), mTitleTextWidths);
-            mTitleTextPaint.getTextBounds(mTitleText, 0, mTitleText.length(), bounds);
-            titleTextLength = bounds.right-bounds.left;
-        }
 
         if (invalidate)
             invalidate();
@@ -371,13 +403,6 @@ public class ChatListItemView extends View {
 
     private void setText(String s, boolean invalidate){
         mText = s;
-        mTextWidths = new float[mText.length()];
-
-        if (mTextPaint!=null) {
-            mTextPaint.getTextWidths(mText, 0, mText.length(), mTextWidths);
-            mTextPaint.getTextBounds(mText, 0, mText.length(), bounds);
-            textLength = bounds.right - bounds.left;
-        }
 
         if (invalidate)
             invalidate();
@@ -436,5 +461,43 @@ public class ChatListItemView extends View {
     public void setStatus(ChatStatus status){
         mStatus = status;
         invalidate();
+    }
+
+    public void setIsGroupChat(boolean isChat){
+        if(mIsGroupChat == isChat)
+            return;
+
+        mIsGroupChat = isChat;
+
+        if (!mIsGroupChat) {
+            mAuthors = null;
+        }
+
+        invalidate();
+        requestLayout();
+    }
+
+    /**
+     * Sets view to display that user is typing.
+     *
+     * @param isTyping
+     * @param authors   array of persons which are typing
+     *
+     * @throws IllegalArgumentException if authors are not set but it's chat and it's supposed to be in typing mode
+     */
+
+    public void setTyping(boolean isTyping, @Nullable String... authors) {
+        if (mIsTyping == isTyping)
+            return;
+
+        mIsTyping = isTyping;
+
+        if (mIsTyping && mIsGroupChat && authors == null)
+            throw new IllegalArgumentException("It's chat, but authors are not specified!");
+
+        mAuthors = authors;
+
+        invalidate();
+        requestLayout();
     }
 }

@@ -6,6 +6,10 @@ import android.graphics.Typeface;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Created by roman on 05.01.16.
  */
@@ -98,22 +102,60 @@ public class Utils {
         return initials.toString().toUpperCase();
     }
 
-    public static String adjustString(String original, float totalWidth, float[] widths, float widthLimit, Paint paint){
+    public static String adjustString(String original, float widthLimit, Paint paint){
 
-        if (totalWidth > widthLimit) {
-            int pos = 0;
-            String dots = "...";
-            float dotsLenght = paint.measureText(dots);
-            float adjustedTotalLength = 0;
+        int breakPos = paint.breakText(original, 0, original.length(), true, widthLimit, null);
+        if (breakPos<original.length()) {
+            return original.substring(0, breakPos-3).concat("...");
+        }
+        return original;
+    }
 
-            while (adjustedTotalLength + widths[pos] < (widthLimit - dotsLenght)) {
-                adjustedTotalLength += widths[pos];
-                pos++;
+    public static class SpanDescriptor{
+        private final String mContent;
+        private final int mEnd;
+        private final int mStart;
+
+        public SpanDescriptor(String content, int start, int end) {
+            if (content == null) {
+                throw new IllegalArgumentException("Content cannot be null in mention!");
             }
 
-            return original.substring(0, pos).concat(dots);
+            if (start>=end) {
+                throw new IllegalArgumentException("start is greater or equal to end!");
+            }
+
+            mContent = content;
+            mStart = start;
+            mEnd = end;
         }
 
-        return original;
+        public int getEnd() {
+            return mEnd;
+        }
+
+        public int getStart() {
+            return mStart;
+        }
+
+        public String getContent() {
+            return mContent;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("[\"%s\", start: %d, end: %d]", mContent, mStart, mEnd);
+        }
+    }
+
+    public static ArrayList<SpanDescriptor> getSpans(CharSequence s, Pattern p){
+        Matcher matcher = p.matcher(s);
+
+        ArrayList<SpanDescriptor> spans = new ArrayList<>();
+        while (matcher.find()) {
+            spans.add(new SpanDescriptor(matcher.group(), matcher.start(), matcher.end()));
+        }
+
+        return spans;
     }
 }
