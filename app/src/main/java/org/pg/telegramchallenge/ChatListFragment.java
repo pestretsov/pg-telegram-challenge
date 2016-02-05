@@ -6,14 +6,18 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -21,6 +25,8 @@ import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatListAdapter;
 import org.pg.telegramchallenge.utils.Utils;
 import org.pg.telegramchallenge.views.ChatListItemView;
+
+import java.util.zip.Inflater;
 
 
 /**
@@ -34,6 +40,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private RecyclerView chatListRecyclerView;
     private ChatListAdapter chatListAdapter;
     private LinearLayoutManager layoutManager;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
 
     private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem;
 
@@ -89,6 +97,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
         if (actionBar != null) {
             actionBar.setTitle("Messages");
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
@@ -97,7 +106,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         // if changeAnimation is enabled it looks like shit; try it yourself
         ((SimpleItemAnimator)chatListRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 
-        chatListAdapter = new ChatListAdapter();
+        chatListAdapter = new ChatListAdapter(getApplication());
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
         chatListRecyclerView.addItemDecoration(new ItemDivider(getContext(), R.drawable.chat_list_divider));
@@ -154,6 +163,11 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     @Override
     public void proceed(TdApi.Chats obj) {
         chatListAdapter.changeData(nextOffset, obj.chats);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return super.onOptionsItemSelected(item);
     }
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {

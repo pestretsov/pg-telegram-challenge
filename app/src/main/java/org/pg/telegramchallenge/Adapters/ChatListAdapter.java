@@ -40,13 +40,18 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 //        this.chatList.addAll(Arrays.asList(chatList));
     }
 
-    public ChatListAdapter() {}
+    public ChatListAdapter() {
+
+    }
+
+    public ChatListAdapter(Context context) {
+        this.context = (ObserverApplication) context;
+    }
 
     @Override
     public ChatListVH onCreateViewHolder(ViewGroup parent, int viewType) {
 
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_list_cell, parent, false);
-        context = (ObserverApplication) parent.getContext().getApplicationContext();
 
         return new ChatListVH(view);
     }
@@ -56,14 +61,9 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         for (TdApi.Chat chat: chats) {
             chatMap.put(chat.id, chat);
             chatList.add(chat.id);
-
-            // TODO: ROMAN first -- comment next 2 lines:
-            this.notifyItemChanged(position);
-            position += 1;
         }
 
-        // TODO: ROMAN second -- uncomment next line:
-//        this.notifyItemRangeInserted(left, chats.length);
+        this.notifyItemRangeInserted(left, chats.length);
     }
 
     public ObserverApplication getApplication() {
@@ -225,8 +225,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
     @Override
     public void proceed(TdApi.Chat obj) {
-        if (!chatMap.containsKey(obj.id))
-            updateData(obj);
+        updateData(obj);
     }
 
     @Override
