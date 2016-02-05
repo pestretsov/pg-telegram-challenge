@@ -20,4 +20,7 @@
 
     <!--for message view placeholder (e.g. 10 unread messages)-->
     <string name="unread_messages">new messages</string>
+    <string name="single_typing_message">typing...</string>
+    <string name="chat_single_typing_message">is typing...</string>
+    <string name="chat_few_typing_message">are typing...</string>
 </resources>

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -48,6 +49,11 @@ public class BaseChatItemView extends View {
     Rect rect = new Rect();
 
     private final String mUnreadMessagesString;
+
+    private boolean mIsTyping = false;
+    private boolean mIsChat = false;
+
+    private String[] mAuthors = null;
 
     public BaseChatItemView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -194,5 +200,4 @@ public class BaseChatItemView extends View {
             requestLayout();
         }
     }
-
 }

@@ -103,22 +103,12 @@ public class Utils {
         return initials.toString().toUpperCase();
     }
 
-    public static String adjustString(String original, float totalWidth, float[] widths, float widthLimit, Paint paint){
+    public static String adjustString(String original, float widthLimit, Paint paint){
 
-        if (totalWidth > widthLimit) {
-            int pos = 0;
-            String dots = "...";
-            float dotsLenght = paint.measureText(dots);
-            float adjustedTotalLength = 0;
-
-            while (adjustedTotalLength + widths[pos] < (widthLimit - dotsLenght)) {
-                adjustedTotalLength += widths[pos];
-                pos++;
-            }
-
-            return original.substring(0, pos).concat(dots);
+        int breakPos = paint.breakText(original, 0, original.length(), true, widthLimit, null);
+        if (breakPos<original.length()) {
+            return original.substring(0, breakPos-3).concat("...");
         }
-
         return original;
     }
 
