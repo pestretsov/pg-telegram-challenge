@@ -1,0 +1,4 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:title="Passcode" android:icon="@drawable/ic_lock_open" android:id="@+id/passcode_lock" app:showAsAction="always" />
+</menu>

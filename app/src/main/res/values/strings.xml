@@ -23,4 +23,8 @@
     <string name="single_typing_message">typing...</string>
     <string name="chat_single_typing_message">is typing...</string>
     <string name="chat_few_typing_message">are typing...</string>
+
+    <!--for NavigationDrawer (ChatListFragment)-->
+    <string name="close_drawer">Navigation View</string>
+    <string name="open_drawer">Navigation View Closed</string>
 </resources>

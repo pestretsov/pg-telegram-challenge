@@ -75,7 +75,7 @@ public class CountrySelectFragment extends Fragment {
                 FragmentManager fm = getFragmentManager();
                 List<Fragment> fragments = fm.getFragments();
 
-                // not really good solution
+                // TODO: fix -- not a good solution
                 AuthPhoneNumberFragment phoneNumberFragment = (AuthPhoneNumberFragment) fragments.get(0);
 
                 phoneNumberFragment.setCountry(country);
@@ -94,7 +94,7 @@ public class CountrySelectFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        actionBar.setTitle(R.string.auth_country);
+//        actionBar.setTitle(R.string.auth_country);
         View viewById = getActivity().findViewById(R.id.action_accept);
         if (viewById!=null) {
             viewById.setVisibility(View.GONE);

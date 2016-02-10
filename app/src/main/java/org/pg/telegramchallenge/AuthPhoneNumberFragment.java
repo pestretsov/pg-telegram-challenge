@@ -1,20 +1,26 @@
 package org.pg.telegramchallenge;
 
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Selection;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TdApi;
+import org.pg.telegramchallenge.utils.Utils;
 
 
 /**
@@ -26,7 +32,7 @@ public class AuthPhoneNumberFragment extends Fragment implements Acceptable, Obs
     private EditText number;
     private EditText countryCode;
 
-    private ActionBar actionBar;
+    private Toolbar toolbar;
     View acceptActionBarIcon;
 
     private CountrySelectFragment.Country country;
@@ -52,9 +58,8 @@ public class AuthPhoneNumberFragment extends Fragment implements Acceptable, Obs
     public void onResume() {
         super.onResume();
 
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(false);
-            actionBar.setTitle(R.string.auth_phone_number_title);
+        if (toolbar != null) {
+            toolbar.setTitle(R.string.auth_phone_number_title);
         }
 
         if (country!=null) {
@@ -76,7 +81,16 @@ public class AuthPhoneNumberFragment extends Fragment implements Acceptable, Obs
 
         View view = inflater.inflate(R.layout.fragment_auth_phone_number, container, false);
 
-        actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
+
+        if (toolbar != null) {
+            toolbar.setTitle(R.string.auth_phone_number_title);
+            toolbar.inflateMenu(R.menu.menu_main);
+
+            ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+            toolbar.setPadding(0, Utils.getStatusBarHeight(getActivity()), 0, 0);
+        }
+
         acceptActionBarIcon = getActivity().findViewById(R.id.action_accept);
 
         countryName = (EditText) view.findViewById(R.id.auth_country_name);
@@ -143,7 +157,6 @@ public class AuthPhoneNumberFragment extends Fragment implements Acceptable, Obs
 
     @Override
     public void accept() {
-
         final String phoneNumber = countryCode.getText().toString() + number.getText().toString();
         getApplication().sendRequest(new TdApi.SetAuthPhoneNumber(phoneNumber));
     }

@@ -5,12 +5,14 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
 import org.drinkless.td.libcore.telegram.TdApi;
+import org.pg.telegramchallenge.utils.Utils;
 
 
 /**
@@ -20,7 +22,7 @@ public class AuthCodeFragment extends Fragment implements Acceptable, ObserverAp
 
     private EditText passCode;
 
-    private ActionBar actionBar;
+    private Toolbar toolbar;
     private View acceptActionBarIcon;
 
 
@@ -47,7 +49,17 @@ public class AuthCodeFragment extends Fragment implements Acceptable, ObserverAp
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_auth_code, container, false);
 
-        actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+
+        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
+
+        if (toolbar != null) {
+            toolbar.setTitle(R.string.auth_phone_number_title);
+            toolbar.inflateMenu(R.menu.menu_main);
+
+            ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+            toolbar.setPadding(0, Utils.getStatusBarHeight(getContext()), 0, 0);
+        }
+
         acceptActionBarIcon = getActivity().findViewById(R.id.action_accept);
 
         passCode = (EditText)view.findViewById(R.id.passCode);
@@ -59,9 +71,8 @@ public class AuthCodeFragment extends Fragment implements Acceptable, ObserverAp
     public void onResume() {
         super.onResume();
 
-        if (actionBar != null) {
-            actionBar.setTitle(R.string.auth_activation_code_title);
-            actionBar.setDisplayHomeAsUpEnabled(true);
+        if (toolbar != null) {
+            toolbar.setTitle(R.string.auth_activation_code_title);
         }
 
         if (acceptActionBarIcon!=null) {
@@ -79,7 +90,7 @@ public class AuthCodeFragment extends Fragment implements Acceptable, ObserverAp
 
     @Override
     public void accept() {
-        getApplication().sendRequest(new TdApi.SetAuthCode(passCode.getText().toString()));
+        getApplication().sendRequest(new TdApi.CheckAuthCode(passCode.getText().toString()));
     }
 
     @Override

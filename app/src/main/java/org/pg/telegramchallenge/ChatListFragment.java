@@ -5,18 +5,23 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,7 +31,10 @@ import org.pg.telegramchallenge.Adapters.ChatListAdapter;
 import org.pg.telegramchallenge.utils.Utils;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
+import java.net.URI;
 import java.util.zip.Inflater;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 
 /**
@@ -35,7 +43,7 @@ import java.util.zip.Inflater;
 public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
         ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver {
 
-    private ActionBar actionBar;
+    private Toolbar toolbar;
 
     private RecyclerView chatListRecyclerView;
     private ChatListAdapter chatListAdapter;
@@ -45,14 +53,17 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem;
 
-    // TODO: ROMAN -- change to 20 (25)
+
+    // TODO: set 25 (20)
     private int visibleThreshold = 15;
     private boolean loading = true;
-
-
-    // TODO: ROMAN -- change to 50
-    private int nextLimit = 20;
-    private int nextOffset = 0;
+    // TODO: set 50
+    private int limit = 20;
+    private long offsetChatId = 0;
+    // объяснение магических чисел
+    // https://vk.com/board55882680?act=search&q=offsetOrder
+    private long offsetOrder = 9223372036854775807L; // == 2^63-1
+    private int chatsCounter = 0;
 
     private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
 
@@ -94,15 +105,39 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
 
-        actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setTitle("Messages");
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
-            actionBar.setDisplayHomeAsUpEnabled(true);
+        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
+        navigationView = (NavigationView) view.findViewById(R.id.navigation_view);
+        drawerLayout = (DrawerLayout) view.findViewById(R.id.drawer_layout);
+        chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chat_list_recycler_view);
+
+        if (toolbar != null) {
+            toolbar.setTitle("Messages");
+
+            toolbar.setNavigationIcon(R.drawable.ic_menu);
+            toolbar.setPadding(0, Utils.getStatusBarHeight(getActivity()), 0, 0);
+            setHasOptionsMenu(true);
+
+            ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+
+            ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(getActivity(), drawerLayout,
+                    toolbar, R.string.open_drawer, R.string.close_drawer) {
+
+                @Override
+                public void onDrawerOpened(View drawerView) {
+                    super.onDrawerOpened(drawerView);
+                }
+
+                @Override
+                public void onDrawerClosed(View drawerView) {
+                    super.onDrawerClosed(drawerView);
+                }
+            };
+
+            drawerLayout.setDrawerListener(actionBarDrawerToggle);
+            actionBarDrawerToggle.syncState();
         }
 
         layoutManager = new LinearLayoutManager(getActivity());
-        chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chatListRecyclerView);
         // if changeAnimation is enabled it looks like shit; try it yourself
         ((SimpleItemAnimator)chatListRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 
@@ -128,19 +163,18 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 }
 
                 if (!loading && totalItems - visibleItems <= firstVisibleItem + visibleThreshold) {
-                    nextOffset+=nextLimit;
-
-                    getApplication().sendRequest(new TdApi.GetChats(nextOffset, nextLimit));
+                    getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
                     loading = true;
                 }
             }
         });
 
-        getApplication().sendRequest(new TdApi.GetChats(nextOffset, nextLimit));
+        getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
         // TODO: decide whether its needed or not
 //        getApplication().sendRequest(new TdApi.GetMe());
+
 
         return view;
     }
@@ -152,7 +186,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.Error err) {
-
     }
 
     @Override
@@ -162,12 +195,13 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.Chats obj) {
-        chatListAdapter.changeData(nextOffset, obj.chats);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
+        int n = obj.chats.length;
+        if (n != 0) {
+            offsetChatId = obj.chats[n-1].id;
+            offsetOrder = obj.chats[n-1].order;
+            chatListAdapter.changeData(chatsCounter, obj.chats);
+            chatsCounter += obj.chats.length;
+        }
     }
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {
@@ -214,5 +248,13 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 mDivider.draw(c);
             }
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        // need to clear ACCEPT icon which is added inside Activity's onCreateOptionsMenu method
+        menu.clear();
+        inflater.inflate(R.menu.menu_chat_list, menu);
     }
 }
