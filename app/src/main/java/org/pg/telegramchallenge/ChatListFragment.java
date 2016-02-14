@@ -3,14 +3,22 @@ package org.pg.telegramchallenge;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -19,29 +27,37 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.ViewTarget;
+
+import org.drinkless.td.libcore.telegram.Client;
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatListAdapter;
+import org.pg.telegramchallenge.utils.AvatarImageView;
 import org.pg.telegramchallenge.utils.Utils;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
-import java.net.URI;
-import java.util.zip.Inflater;
-
-import de.hdodenhof.circleimageview.CircleImageView;
+import java.util.concurrent.CountDownLatch;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
-        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver {
+        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver, ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver{
+
+    final CountDownLatch latch = new CountDownLatch(1);
 
     private Toolbar toolbar;
 
@@ -50,15 +66,18 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private LinearLayoutManager layoutManager;
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
+    private View header;
+    private AvatarImageView userProfilePhoto;
+    private ViewTarget<ImageView, Bitmap> glideTarget;
 
     private int visibleItems, totalItems, previousTotal = 0, firstVisibleItem;
-
+    private String avatarImageFilePath = null;
 
     // TODO: set 25 (20)
     private int visibleThreshold = 15;
     private boolean loading = true;
     // TODO: set 50
-    private int limit = 20;
+    private int limit = 25;
     private long offsetChatId = 0;
     // объяснение магических чисел
     // https://vk.com/board55882680?act=search&q=offsetOrder
@@ -101,7 +120,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
 
@@ -111,7 +130,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chat_list_recycler_view);
 
         if (toolbar != null) {
-            toolbar.setTitle("Messages");
+            toolbar.setTitle(R.string.chat_list_title);
 
             toolbar.setNavigationIcon(R.drawable.ic_menu);
             toolbar.setPadding(0, Utils.getStatusBarHeight(getActivity()), 0, 0);
@@ -170,11 +189,58 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
             }
         });
 
+
+        // THE ORDER OF REQUESTS IS CRUCIAL !!!
         getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
-        // TODO: decide whether its needed or not
-//        getApplication().sendRequest(new TdApi.GetMe());
+        getApplication().sendRequest(new TdApi.GetMe(), new Client.ResultHandler() {
+            @Override
+            public void onResult(TdApi.TLObject object) {
+                if (object instanceof TdApi.User) {
+                    ObserverApplication.userMe = (TdApi.User)object;
+                    latch.countDown();
+                }
+            }
+        });
 
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+
+        }
+
+        header = navigationView.getHeaderView(0);
+
+        String fullName = ObserverApplication.userMe.firstName + " " + ObserverApplication.userMe.lastName;
+        String phoneNumber = "+" + ObserverApplication.userMe.phoneNumber;
+
+        ((TextView)header.findViewById(R.id.userMe_name)).setText(fullName);
+        ((TextView)header.findViewById(R.id.userMe_phone)).setText(phoneNumber);
+
+
+        // ТУТ ВООБЩЕ ХЗ КАК НЕ КРАШИТСЯ
+        glideTarget = new ViewTarget<ImageView, Bitmap>((ImageView) header.findViewById(R.id.userMe_image)) {
+            @Override
+            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+//                String initials = Utils.getInitials(ObserverApplication.userMe.firstName + " " + ObserverApplication.userMe.lastName);
+                RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
+                roundedBitmapDrawable.setCircular(true);
+                ((ImageView)header.findViewById(R.id.userMe_image)).setImageDrawable(roundedBitmapDrawable);
+            }
+        };
+
+        if (!(ObserverApplication.userMe.profilePhoto.big.path.isEmpty())) {
+            userProfilePhoto = (AvatarImageView)header.findViewById(R.id.userMe_image);
+            userProfilePhoto.setInitials("AP");
+            avatarImageFilePath = ObserverApplication.userMe.profilePhoto.big.path;
+//            Glide.with(getActivity()).load(avatarImageFilePath).asBitmap().fitCenter().into(glideTarget);
+        } else {
+            avatarImageFilePath = null;
+
+            if (ObserverApplication.userMe.profilePhoto.big.id != 0) {
+                getApplication().sendRequest(new TdApi.DownloadFile(ObserverApplication.userMe.profilePhoto.big.id));
+            }
+        }
 
         return view;
     }
@@ -197,11 +263,19 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     public void proceed(TdApi.Chats obj) {
         int n = obj.chats.length;
         if (n != 0) {
+//            TODO: THIS OR
             offsetChatId = obj.chats[n-1].id;
             offsetOrder = obj.chats[n-1].order;
             chatListAdapter.changeData(chatsCounter, obj.chats);
             chatsCounter += obj.chats.length;
         }
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateChatOrder obj) {
+        // TODO: OR THAT ?
+//        offsetOrder = obj.order;
+//        offsetChatId = obj.chatId;
     }
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {
@@ -247,6 +321,15 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 mDivider.setBounds(left, top, right, bottom);
                 mDivider.draw(c);
             }
+        }
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateFile obj) {
+        if (obj.file.id == ObserverApplication.userMe.profilePhoto.big.id) {
+            ObserverApplication.userMe.profilePhoto.big = obj.file;
+            avatarImageFilePath = ObserverApplication.userMe.profilePhoto.big.path;
+//            Glide.with(getActivity()).load(avatarImageFilePath).asBitmap().fitCenter().into(glideTarget);
         }
     }
 

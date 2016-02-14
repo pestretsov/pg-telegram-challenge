@@ -18,6 +18,8 @@
     <string name="auth_first_name_hint">First name</string>
     <string name="auth_second_name_hint">Last name (optional)</string>
 
+    <string name="chat_list_title">Messages</string>
+
     <!--for message view placeholder (e.g. 10 unread messages)-->
     <string name="unread_messages">new messages</string>
     <string name="single_typing_message">typing...</string>

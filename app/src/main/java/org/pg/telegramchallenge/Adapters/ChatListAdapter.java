@@ -29,16 +29,12 @@ import java.util.Observer;
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
         implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
-        ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver {
+        ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver {
 
     private volatile List<Long> chatList = new LinkedList<>();
     private volatile Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
-
-    public ChatListAdapter(TdApi.Chat[] chatList) {
-//        this.chatList.addAll(Arrays.asList(chatList));
-    }
 
     public ChatListAdapter() {
 
@@ -57,13 +53,22 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     }
 
     public void changeData(int left, TdApi.Chat[] chats) {
-        int position = left;
+        int right = left;
         for (TdApi.Chat chat: chats) {
-            chatMap.put(chat.id, chat);
-            chatList.add(chat.id);
+            if (!chatMap.containsKey(chat.id)) {
+                chatMap.put(chat.id, chat);
+                chatList.add(chat.id);
+            } else if (chatMap.containsKey(chat.id)) {
+                // rearrange
+                // TODO:TEST
+                chatList.remove(chat.id);
+                chatList.add(chat.id);
+//                right+=1;
+            }
         }
 
-        this.notifyItemRangeInserted(left, chats.length);
+        this.notifyItemRangeChanged(left, chats.length);
+//        this.notifyItemRangeInserted(right, chats.length);
     }
 
     public ObserverApplication getApplication() {
@@ -76,15 +81,12 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
             chat.topMessage = message;
 
-            if (ObserverApplication.userMe != null && message.fromId != ObserverApplication.userMe.id) {
+            if (message.sendState instanceof TdApi.MessageIsIncoming) {
                 chat.unreadCount += 1;
-            }
-
-            if (ObserverApplication.userMe != null && message.chatId == ObserverApplication.userMe.id){
+                chat.lastReadOutboxMessageId = chat.topMessage.id;
+            } else {
                 chat.lastReadInboxMessageId = chat.topMessage.id;
-                chat.lastReadOutboxMessageId = chat.lastReadInboxMessageId;
             }
-
             updateData(chat);
         } else {
             getApplication().sendRequest(new TdApi.GetChat(message.chatId));
@@ -109,12 +111,13 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
             // update Chat itself
             chatMap.put(chat.id, chat);
+            this.notifyItemRangeChanged(0, position+1);
         } else {
             // add new Chat
             chatList.add(0, chat.id);
             chatMap.put(chat.id, chat);
+            this.notifyItemInserted(0);
         }
-        this.notifyItemRangeChanged(0, position+1);
     }
 
     /**
@@ -153,45 +156,46 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         Date date = new Date(Utils.timestampToMillis(currentChat.topMessage.date));
 
         holder.chatListItemView.setDate(date);
+
+
         holder.chatListItemView.setUnreadCount(currentChat.unreadCount);
+
 
         String title = "";
         if (currentChat.type instanceof TdApi.PrivateChatInfo) {
-            TdApi.PrivateChatInfo privateChat = (TdApi.PrivateChatInfo) currentChat.type;
-
-            if (privateChat.user.firstName.length() > 0) {
-                title += privateChat.user.firstName;
-            }
-
-            if (privateChat.user.lastName.length() > 0) {
-                if (title.length() > 0) {
-                    title += " ";
-                }
-                title += privateChat.user.lastName;
-            }
             holder.chatListItemView.setIsGroupChat(false);
         } else {
-            TdApi.Chat groupChat = currentChat;
-            title = groupChat.title;
             holder.chatListItemView.setIsGroupChat(true);
         }
+        title = currentChat.title;
 
         // no chat name <=> DELETED
         if (title.length() == 0) {
             title = "DELETED";
         }
+        holder.chatListItemView.setTitle(title);
 
-        holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
-        if (ObserverApplication.userMe != null && currentChat.topMessage.fromId != ObserverApplication.userMe.id) {
+        if (currentChat.topMessage.fromId != ObserverApplication.userMe.id){
             holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
-        } else if (ObserverApplication.userMe != null && currentChat.topMessage.id > currentChat.lastReadOutboxMessageId) {
+        }
+        else if (currentChat.lastReadOutboxMessageId < currentChat.topMessage.id) {
             holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
+        } else {
+            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
         }
 
+        if (currentChat.topMessage.sendState instanceof TdApi.MessageIsBeingSent) {
+            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.DELIVERING);
+        }
 
-        handleAvatar(holder, getProfilePhoto(currentChat));
+//        holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+//        if (currentChat.topMessage.sendState instanceof TdApi.MessageIsIncoming) {
+//            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+//        } else if (currentChat.topMessage.id > currentChat.lastReadOutboxMessageId) {
+//            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
+//        }
 
-        holder.chatListItemView.setTitle(title);
+        handleAvatar(holder, currentChat.photo);
     }
 
     @Override
@@ -201,24 +205,13 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         return 0;
     }
 
-    private TdApi.ChatPhoto getProfilePhoto(TdApi.Chat c) {
-        switch (c.type.getConstructor()) {
-            case TdApi.PrivateChatInfo.CONSTRUCTOR:
-                return c.photo;
-            case TdApi.GroupChatInfo.CONSTRUCTOR:
-                return c.photo;
-            default:
-                throw new IllegalArgumentException("No profile photo in Chat!");
-        }
-    }
-
     @Override
     public void proceed(TdApi.UpdateFile obj) {
         int i = 0;
         for (Long chatId : chatList) {
             TdApi.Chat c = chatMap.get(chatId);
-            if (obj.file.id == getProfilePhoto(c).small.id) {
-                getProfilePhoto(c).small = obj.file;
+            if (obj.file.id == c.photo.small.id) {
+                c.photo.small = obj.file;
                 this.notifyItemChanged(i);
                 break;
             }
@@ -245,6 +238,21 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             chatMap.get(obj.chatId).lastReadInboxMessageId = obj.lastReadInboxMessageId;
             chatMap.get(obj.chatId).unreadCount = obj.unreadCount;
             this.notifyItemChanged(chatList.indexOf(obj.chatId));
+        }
+    }
+
+
+    // TODO: complete
+    @Override
+    public void proceed(TdApi.UpdateUserAction obj) {
+        if (obj.action instanceof TdApi.SendMessageTypingAction) {
+            if (ObserverApplication.userMe != null && obj.chatId == ObserverApplication.userMe.id) {
+                chatMap.get(obj.chatId).lastReadOutboxMessageId = chatMap.get(obj.chatId).topMessage.id;
+                chatMap.get(obj.chatId).lastReadInboxMessageId = chatMap.get(obj.chatId).topMessage.id;
+                chatMap.get(obj.chatId).unreadCount = 0;
+                this.notifyItemChanged(chatList.indexOf(obj.chatId));
+            }
+
         }
     }
 

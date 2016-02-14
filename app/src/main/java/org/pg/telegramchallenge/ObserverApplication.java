@@ -25,7 +25,14 @@ public class ObserverApplication extends Application implements Client.ResultHan
     public static volatile Context appContext;
     public static final String TAG = ObserverApplication.class.getSimpleName();
 
-    public static volatile TdApi.User userMe = null;
+    public static volatile TdApi.User userMe;
+
+    //UpdateUserAction {
+ //   chatId = 755249
+   // userId = 755249
+    //action = SendMessageTypingAction {
+    //}
+//}
 
     static {
         try {
@@ -105,6 +112,12 @@ public class ObserverApplication extends Application implements Client.ResultHan
         void proceed(TdApi.UpdateChatTitle obj);
     }
 
+    private volatile List<OnUpdateChatOrderObserver> onUpdateChatOrderObservers = new LinkedList<>();
+
+    public interface OnUpdateChatOrderObserver {
+        void proceed(TdApi.UpdateChatOrder obj);
+    }
+
     private volatile List<ChatsObserver> chatsObservers = new LinkedList<>();
 
     public interface ChatsObserver {
@@ -174,6 +187,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
             onUpdateChatPhotoObservers.add((OnUpdateChatPhotoObserver) obs);
         }
 
+        if (obs instanceof OnUpdateChatOrderObserver) {
+            onUpdateChatOrderObservers.add((OnUpdateChatOrderObserver) obs);
+        }
+
         if (obs instanceof ChatsObserver) {
             chatsObservers.add((ChatsObserver) obs);
         }
@@ -216,6 +233,9 @@ public class ObserverApplication extends Application implements Client.ResultHan
             onUpdateChatPhotoObservers.remove(obs);
         }
 
+        if (obs instanceof OnUpdateChatOrderObserver) {
+            onUpdateChatOrderObservers.remove(obs);
+        }
 
         if (obs instanceof ChatsObserver) {
             chatsObservers.remove(obs);
@@ -236,6 +256,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
         } else {
             TG.getClientInstance().send(request, this);
         }
+    }
+
+    public void sendRequest(TdApi.TLFunction request, Client.ResultHandler handler) {
+        TG.getClientInstance().send(request, handler);
     }
 
     public boolean invokeRequestPool() {
@@ -319,12 +343,19 @@ public class ObserverApplication extends Application implements Client.ResultHan
                     return;
                 }
 
-                if (object instanceof TdApi.UpdateUser) {
-                    if (userMe == null) {
-                        userMe = ((TdApi.UpdateUser) object).user;
+                if (object instanceof TdApi.UpdateChatOrder) {
+                    for (OnUpdateChatOrderObserver observer : onUpdateChatOrderObservers) {
+                        observer.proceed((TdApi.UpdateChatOrder) object);
                     }
                     return;
                 }
+
+//                if (object instanceof TdApi.UpdateUser) {
+//                    if (userMe == null) {
+//                        userMe = ((TdApi.UpdateUser) object).user;
+//                    }
+//                    return;
+//                }
 
                 return;
             }

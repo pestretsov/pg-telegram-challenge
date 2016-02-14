@@ -23,6 +23,16 @@
         <attr name="myDrawable" format="reference"/>
     </declare-styleable>
 
+    <declare-styleable name="AvatarImageView">
+        <attr name="android:background"/>
+        <attr name="android:textSize"/>
+        <attr name="android:text"/>
+        <attr name="android:textColor"/>
+
+        <attr name="avatarImageViewColor" format="color"/>
+    </declare-styleable>
+
+
     <declare-styleable name="BaseChatItemView">
         <attr name="barColor" format="color"/>
 

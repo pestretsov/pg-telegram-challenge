@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:background="@color/accent_telegram_blue">
 
-    <de.hdodenhof.circleimageview.CircleImageView
+    <org.pg.telegramchallenge.utils.AvatarImageView
         android:id="@+id/userMe_image"
         android:layout_width="76dp"
         android:layout_height="76dp"
