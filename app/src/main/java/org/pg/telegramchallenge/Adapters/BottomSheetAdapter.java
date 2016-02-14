@@ -20,7 +20,6 @@ import java.util.ArrayList;
 public class BottomSheetAdapter  extends RecyclerView.Adapter<BottomSheetAdapter.ViewHolder> {
     private final Cursor mCursor;
     private final Context mContext;
-//    ArrayList<>
 
     public BottomSheetAdapter(Context c, Cursor mediaCursor) {
         mCursor = mediaCursor;
@@ -31,15 +30,14 @@ public class BottomSheetAdapter  extends RecyclerView.Adapter<BottomSheetAdapter
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.bottom_sheet_recycler_item, parent, false);
 
-        return new ViewHolder((ImageView) v);
+        return new ViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-//        holder.mImageView;
         mCursor.moveToPosition(position);
         String myData = mCursor.getString(mCursor.getColumnIndex(MediaStore.Images.Media.DATA));
-        Glide.with(mContext).load(myData).centerCrop().into((ImageView) holder.itemView);
+        Glide.with(mContext).load(myData).centerCrop().into(holder.mImageView);
     }
 
     @Override
@@ -49,8 +47,12 @@ public class BottomSheetAdapter  extends RecyclerView.Adapter<BottomSheetAdapter
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
-        public ViewHolder(ImageView itemView) {
+        ImageView mImageView;
+
+        public ViewHolder(View itemView) {
             super(itemView);
+
+            mImageView = (ImageView) itemView.findViewById(R.id.image_preview);
         }
     }
 }
