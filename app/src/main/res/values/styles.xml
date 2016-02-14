@@ -23,6 +23,7 @@
         <item name="timeTextSize">14sp</item>
         <item name="counterTextSize">12sp</item> <!--it's not like in guidelines -->
         <item name="counterColor">#6ECE82</item>
+        <item name="errorColor">#E48283</item>
         <item name="counterTextColor">#FFFFFF</item>
     </style>
 

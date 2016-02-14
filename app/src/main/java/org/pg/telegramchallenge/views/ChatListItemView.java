@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.text.TextPaint;
 import android.text.format.DateUtils;
 import android.util.AttributeSet;
 import android.view.View;
@@ -28,7 +29,7 @@ public class ChatListItemView extends View {
     private static final String TAG = ChatListItemView.class.getSimpleName();
     private static String SINGLE_TYPING_MESSAGE ,CHAT_SINGLE_TYPING_MESSAGE, CHAT_FEW_TYPING_MESSAGE;
 
-    private Paint mCounterTextPaint;
+    private TextPaint mCounterTextPaint;
     private boolean mIsGroupChat = false;
     private boolean mIsTyping = false;
     private String[] mAuthors = null;
@@ -81,6 +82,7 @@ public class ChatListItemView extends View {
     private Drawable avatarDrawable = null;
     private final int bageColor = ContextCompat.getColor(getContext(), R.color.accent_telegram_blue);
     private int mCounterColor;
+    private final int mErrorColor;
 
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy", Locale.ENGLISH);
@@ -101,6 +103,7 @@ public class ChatListItemView extends View {
             mTitleTextColor = attributes.getColor(R.styleable.ChatListItemView_titleTextColor, Color.BLACK);
 
             mCounterColor = attributes.getColor(R.styleable.ChatListItemView_counterColor, Color.GREEN);
+            mErrorColor = attributes.getColor(R.styleable.ChatListItemView_errorColor, Color.RED);
             mCounterTextHeight = attributes.getDimension(R.styleable.ChatListItemView_counterTextSize, 0.0f);
             mCounterTextColor = attributes.getColor(R.styleable.ChatListItemView_counterTextColor, Color.WHITE);
 
@@ -199,12 +202,12 @@ public class ChatListItemView extends View {
         counterPaint = new Paint();
         counterPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 //        counterPaint.setStrokeWidth(0);
-        counterPaint.setColor(mCounterColor);
         counterPaint.setAntiAlias(true);
 
-        mCounterTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mCounterTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         mCounterTextPaint.setTextSize(mCounterTextHeight);
         mCounterTextPaint.setColor(mCounterTextColor);
+        mCounterTextPaint.setTextAlign(Paint.Align.CENTER);
 
         glideTarget = new ViewTarget<ChatListItemView, Bitmap>(this) {
             @Override
@@ -302,16 +305,25 @@ public class ChatListItemView extends View {
         float textEndX;
 
         if (unread!=0) {
-            String unreadString = Integer.toString(unread);
+            String unreadString;
+
+            if (unread>0) {
+                unreadString = Integer.toString(unread);
+                counterPaint.setColor(mCounterColor);
+            } else {
+                unreadString ="!";
+                counterPaint.setColor(mErrorColor);
+            }
             mCounterTextPaint.getTextBounds("0", 0, 1, bounds);
-            int digitBounds = bounds.bottom - bounds.top;
+            float unreadStringWidth = mCounterTextPaint.measureText(unreadString, 0, unreadString.length()-1);
 
             float radius = (mCounterTextHeight) * 0.7f;
-            float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left)*1.2f;
+//            float rectLength = (unreadString.length()-1)*(bounds.right-bounds.left)*1.2f;
+            float rectLength = unreadStringWidth;
 
             float cx, cy;
             cx = right - radius;
-            cy = bottom - betweenText - digitBounds/2;
+            cy = bottom + (mCounterTextPaint.descent() + mCounterTextPaint.ascent())/2;
 
             canvas.drawCircle(cx - rectLength,
                     cy,
@@ -334,9 +346,9 @@ public class ChatListItemView extends View {
                     counterPaint);
 
             canvas.drawText(unreadString,
-                    cx - rectLength/2 - mCounterTextPaint.measureText(unreadString)/2,
+                    cx - rectLength/2,
 //                    cy + digitBounds/2,
-                    bottom - betweenText,
+                    bottom,
                     mCounterTextPaint);
         } else {
             textEndX = right;
@@ -445,7 +457,7 @@ public class ChatListItemView extends View {
      * Sets number of unread messages in green circle
      *
      * @param unreadCount
-     * if there is no unread messages, pass 0;
+     * if there is no unread messages, pass 0; if messages are not delivered, pass value<0 (-1)
      */
     public void setUnreadCount(int unreadCount) {
         unread = unreadCount;

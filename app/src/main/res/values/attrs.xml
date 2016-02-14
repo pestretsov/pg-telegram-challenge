@@ -16,6 +16,7 @@
         <attr name="counterTextSize" format="dimension"/>
         <attr name="counterTextColor" format="color"/>
         <attr name="counterColor" format="color"/>
+        <attr name="errorColor" format="color"/>
 
         <attr name="timeTextSize"/>
 

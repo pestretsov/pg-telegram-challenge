@@ -38,14 +38,15 @@ public class EmptyFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_empty, container, false);
 
         ChatListItemView itemView = (ChatListItemView) view.findViewById(R.id.sample_view);
-        itemView.setUnreadCount(1);
         itemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
 
         itemView.setOnClickListener(new View.OnClickListener() {
+
+            int count = 1;
             @Override
             public void onClick(View v) {
-                v.requestLayout();
-                v.invalidate();
+                ((ChatListItemView) v).setUnreadCount(count);
+                count += 1;
             }
         });
 
