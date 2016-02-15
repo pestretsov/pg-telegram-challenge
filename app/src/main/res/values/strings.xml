@@ -24,5 +24,8 @@
     <string name="chat_single_typing_message">is typing...</string>
     <string name="chat_few_typing_message">are typing...</string>
     <string name="attach_bottom_sheet_take_photo">Take photo</string>
-    <string name="attach_bottom_sheet_from_gallery">Choose from gallery</string>
+    <string name="attach_bottom_sheet_from_gallery">Gallery</string>
+    <string name="attach_bottom_sheet_location">Location</string>
+    <string name="attach_bottom_sheet_audio">Audio</string>
+    <string name="attach_bottom_sheet_contact">Contact</string>
 </resources>

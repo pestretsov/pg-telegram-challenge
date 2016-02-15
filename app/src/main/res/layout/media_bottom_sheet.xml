@@ -6,30 +6,64 @@
               android:layout_gravity="bottom|center"
               android:background="@android:color/white"
               android:orientation="vertical">
-
-    <android.support.v7.widget.RecyclerView
-            android:id="@+id/bottom_sheet_recycler"
-            android:gravity="bottom"
+    <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="120dp">
-    </android.support.v7.widget.RecyclerView>
-    <TextView
-            android:id="@+id/take_photo_text_view"
-            android:drawableLeft="@drawable/ic_attach_photo"
-            android:text="@string/attach_bottom_sheet_take_photo"
-            android:drawablePadding="15dp"
-            android:gravity="center_vertical"
-            android:padding="15dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+        <android.support.v7.widget.RecyclerView
+                android:visibility="gone"
+                android:id="@+id/bottom_sheet_recycler"
+                android:gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+        </android.support.v7.widget.RecyclerView>
+
+        <ProgressBar
+                android:id="@+id/progress_bar_bottom_sheet"
+                android:layout_gravity="center_vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminate="true" />
+    </FrameLayout>
+
     <TextView
             android:id="@+id/from_gallery_text_view"
             android:layout_width="match_parent"
-              android:layout_height="wrap_content"
+            android:layout_height="wrap_content"
             android:drawableLeft="@drawable/ic_attach_gallery"
             android:drawablePadding="15dp"
             android:gravity="center_vertical"
             android:padding="15dp"
-              android:text="@string/attach_bottom_sheet_from_gallery"/>
+            android:text="@string/attach_bottom_sheet_from_gallery"/>
+
+    <TextView
+            android:id="@+id/audio_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_headset_gray_24dp"
+            android:drawablePadding="15dp"
+            android:gravity="center_vertical"
+            android:padding="15dp"
+            android:text="@string/attach_bottom_sheet_audio"/>
+
+
+    <TextView
+            android:id="@+id/contact_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_perm_contact_calendar_gray_24dp"
+            android:drawablePadding="15dp"
+            android:gravity="center_vertical"
+            android:padding="15dp"
+            android:text="@string/attach_bottom_sheet_contact"/>
+
+    <TextView
+            android:id="@+id/attach_location_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_location_on_gray_24dp"
+            android:drawablePadding="15dp"
+            android:gravity="center_vertical"
+            android:padding="15dp"
+            android:text="@string/attach_bottom_sheet_location"/>
 
 </LinearLayout>
