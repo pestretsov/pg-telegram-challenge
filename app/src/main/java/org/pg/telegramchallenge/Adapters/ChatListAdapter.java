@@ -3,9 +3,12 @@ package org.pg.telegramchallenge.Adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
+import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.ChatListFragment;
@@ -31,8 +34,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
         ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver {
 
-    private volatile List<Long> chatList = new LinkedList<>();
-    private volatile Map<Long, TdApi.Chat> chatMap = new HashMap<>();
+    private static volatile List<Long> chatList = new LinkedList<>();
+    private static volatile Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
 
@@ -49,11 +52,18 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_list_cell, parent, false);
 
-        return new ChatListVH(view);
+        ChatListVH viewHolder = new ChatListVH(view, new ChatListVH.OnChatClickListener() {
+            @Override
+            public void onChatClick(long chatId) {
+                Log.e("CLICK", String.valueOf(chatId));
+                Toast.makeText(context, String.valueOf(chatId), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        return viewHolder;
     }
 
     public void changeData(int left, TdApi.Chat[] chats) {
-        int right = left;
         for (TdApi.Chat chat: chats) {
             if (!chatMap.containsKey(chat.id)) {
                 chatMap.put(chat.id, chat);
@@ -89,7 +99,10 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             }
             updateData(chat);
         } else {
+            chatMap.put(message.chatId, null);
+            chatList.add(message.chatId);
             getApplication().sendRequest(new TdApi.GetChat(message.chatId));
+
         }
     }
 
@@ -186,14 +199,14 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
         if (currentChat.topMessage.sendState instanceof TdApi.MessageIsBeingSent) {
             holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.DELIVERING);
+        } else if (currentChat.topMessage.sendState instanceof TdApi.MessageIsFailedToSend) {
+            holder.chatListItemView.setUnreadCount(-1);
         }
 
-//        holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
-//        if (currentChat.topMessage.sendState instanceof TdApi.MessageIsIncoming) {
-//            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
-//        } else if (currentChat.topMessage.id > currentChat.lastReadOutboxMessageId) {
-//            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
-//        }
+        if (currentChat.id == ObserverApplication.userMe.id) {
+            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+        }
+
 
         handleAvatar(holder, currentChat.photo);
     }
@@ -256,12 +269,25 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         }
     }
 
-    public class ChatListVH extends RecyclerView.ViewHolder {
-        public ChatListItemView chatListItemView;
+    public static class ChatListVH extends RecyclerView.ViewHolder implements OnClickListener {
+        private ChatListItemView chatListItemView;
 
-        public ChatListVH(View itemView) {
+        private OnChatClickListener mListener;
+
+        public ChatListVH(View itemView, OnChatClickListener listener) {
             super(itemView);
+            itemView.setOnClickListener(this);
+            mListener = listener;
             chatListItemView = (ChatListItemView)itemView.findViewById(R.id.chat_list_itemview);
+        }
+
+        @Override
+        public void onClick(View v) {
+            mListener.onChatClick(chatList.get(getAdapterPosition()));
+        }
+
+        public interface OnChatClickListener {
+            void onChatClick(long chatId);
         }
     }
 }

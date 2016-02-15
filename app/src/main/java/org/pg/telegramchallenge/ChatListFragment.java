@@ -46,6 +46,7 @@ import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatListAdapter;
 import org.pg.telegramchallenge.utils.AvatarImageView;
 import org.pg.telegramchallenge.utils.Utils;
+import org.pg.telegramchallenge.views.BaseChatItemView;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
 import java.util.concurrent.CountDownLatch;
@@ -77,7 +78,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private int visibleThreshold = 15;
     private boolean loading = true;
     // TODO: set 50
-    private int limit = 25;
+    private int limit = 50;
     private long offsetChatId = 0;
     // объяснение магических чисел
     // https://vk.com/board55882680?act=search&q=offsetOrder
@@ -189,10 +190,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
             }
         });
 
-
-        // THE ORDER OF REQUESTS IS CRUCIAL !!!
-        getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
-
         getApplication().sendRequest(new TdApi.GetMe(), new Client.ResultHandler() {
             @Override
             public void onResult(TdApi.TLObject object) {
@@ -209,20 +206,22 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
         }
 
-        header = navigationView.getHeaderView(0);
+        getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
-        String fullName = ObserverApplication.userMe.firstName + " " + ObserverApplication.userMe.lastName;
+        String fullName = Utils.getFullName(ObserverApplication.userMe.firstName, ObserverApplication.userMe.lastName);
         String phoneNumber = "+" + ObserverApplication.userMe.phoneNumber;
+
+        header = navigationView.getHeaderView(0);
+        userProfilePhoto = (AvatarImageView)header.findViewById(R.id.userMe_image);
+        userProfilePhoto.setInitials(Utils.getInitials(fullName));
 
         ((TextView)header.findViewById(R.id.userMe_name)).setText(fullName);
         ((TextView)header.findViewById(R.id.userMe_phone)).setText(phoneNumber);
 
-
         // ТУТ ВООБЩЕ ХЗ КАК НЕ КРАШИТСЯ
-        glideTarget = new ViewTarget<ImageView, Bitmap>((ImageView) header.findViewById(R.id.userMe_image)) {
+        glideTarget = new ViewTarget<ImageView, Bitmap>(userProfilePhoto) {
             @Override
             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-//                String initials = Utils.getInitials(ObserverApplication.userMe.firstName + " " + ObserverApplication.userMe.lastName);
                 RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
                 roundedBitmapDrawable.setCircular(true);
                 ((ImageView)header.findViewById(R.id.userMe_image)).setImageDrawable(roundedBitmapDrawable);
@@ -230,8 +229,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         };
 
         if (!(ObserverApplication.userMe.profilePhoto.big.path.isEmpty())) {
-            userProfilePhoto = (AvatarImageView)header.findViewById(R.id.userMe_image);
-            userProfilePhoto.setInitials("AP");
             avatarImageFilePath = ObserverApplication.userMe.profilePhoto.big.path;
 //            Glide.with(getActivity()).load(avatarImageFilePath).asBitmap().fitCenter().into(glideTarget);
         } else {

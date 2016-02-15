@@ -103,6 +103,17 @@ public class Utils {
         return initials.toString().toUpperCase();
     }
 
+    public static String getFullName(String first, String last) {
+        StringBuilder fullname = new StringBuilder();
+
+        fullname.append((first != null) ? first : "");
+        if (last != null) {
+            fullname.append(fullname.length() != 0 ? " " + last : "");
+        }
+
+        return fullname.toString();
+    }
+
     public static String adjustString(String original, float widthLimit, Paint paint){
 
         int breakPos = paint.breakText(original, 0, original.length(), true, widthLimit, null);

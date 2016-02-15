@@ -25,6 +25,8 @@ public class HandlerService extends Service implements Client.ResultHandler {
 
     private static final String TAG = HandlerService.class.getSimpleName();
 
+    private static final int LOG_ERROR = 1, LOG_VERBOSE = 5, LOG_ASSERT = 0, LOG_WARNING = 2, LOG_INFO = 3, LOG_DEBUG = 4;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -42,6 +44,8 @@ public class HandlerService extends Service implements Client.ResultHandler {
 
         TG.setDir(dir);
         TG.setUpdatesHandler(application);
+        TG.setFileLogEnabled(false);
+        TG.setLogVerbosity(LOG_ERROR);
 
         // when service is created, requests from pull can be invoked
         application.invokeRequestPool();

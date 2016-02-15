@@ -27,13 +27,6 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
     public static volatile TdApi.User userMe;
 
-    //UpdateUserAction {
- //   chatId = 755249
-   // userId = 755249
-    //action = SendMessageTypingAction {
-    //}
-//}
-
     static {
         try {
             System.loadLibrary("tdjni");
