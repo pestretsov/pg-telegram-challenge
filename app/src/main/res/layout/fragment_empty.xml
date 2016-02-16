@@ -47,5 +47,6 @@
             android:layout_centerHorizontal="true"
             android:background="#3F51B5"
             android:text="Click to open"
+            android:visibility="invisible"
             android:textColor="@android:color/white"/>
 </RelativeLayout>

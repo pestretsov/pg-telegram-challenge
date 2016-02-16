@@ -6,6 +6,7 @@ import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -18,12 +19,19 @@ import java.util.ArrayList;
  * Created by Roman on 08.02.2016.
  */
 public class BottomSheetAdapter  extends RecyclerView.Adapter<BottomSheetAdapter.ViewHolder> {
-    private final Cursor mCursor;
+    private Cursor mCursor;
     private final Context mContext;
 
     public BottomSheetAdapter(Context c, Cursor mediaCursor) {
         mCursor = mediaCursor;
         mContext = c;
+    }
+
+    public void setCursor(Cursor cursor) {
+        if (mCursor!=null) {
+            mCursor.close();
+        } //TODO check if this OK
+        this.mCursor = cursor;
     }
 
     @Override
@@ -42,6 +50,9 @@ public class BottomSheetAdapter  extends RecyclerView.Adapter<BottomSheetAdapter
 
     @Override
     public int getItemCount() {
+        if (mCursor == null) {
+            return 0;
+        }
         return mCursor.getCount();
     }
 
