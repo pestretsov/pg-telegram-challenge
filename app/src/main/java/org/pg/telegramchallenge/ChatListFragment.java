@@ -55,8 +55,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver,
-        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver, ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver{
+public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver, ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver{
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -116,8 +115,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     public void onPause(){
         super.onPause();
 
-        getApplication().removeObserver(this);
-        getApplication().removeObserver(chatListAdapter);
+//        getApplication().removeObserver(this);
+//        getApplication().removeObserver(chatListAdapter);
     }
 
     @Override
@@ -161,7 +160,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         // if changeAnimation is enabled it looks like shit; try it yourself
         ((SimpleItemAnimator)chatListRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 
-        chatListAdapter = new ChatListAdapter(getApplication());
+        chatListAdapter = new ChatListAdapter(getApplication(), (MainActivity) getActivity());
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
         chatListRecyclerView.addItemDecoration(new ItemDivider(getContext(), R.drawable.chat_list_divider));
@@ -249,11 +248,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.Error err) {
-    }
-
-    @Override
-    public void proceed(TdApi.UpdateNewMessage obj) {
-        chatListAdapter.updateMessage(obj.message);
     }
 
     @Override

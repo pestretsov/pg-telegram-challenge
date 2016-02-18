@@ -133,6 +133,11 @@ public class ObserverApplication extends Application implements Client.ResultHan
         void proceed(TdApi.UpdateChatPhoto obj);
     }
 
+    private volatile List<OnGetChatHistoryObserver> onGetChatHistoryObservers = new LinkedList<>();
+    public interface OnGetChatHistoryObserver {
+        void proceed(TdApi.Messages obj);
+    }
+
     /** for future
      * there can be multimap of classes of tdlib
      * assosiated with observers which have to get
@@ -191,6 +196,11 @@ public class ObserverApplication extends Application implements Client.ResultHan
         if (obs instanceof ChatObserver) {
             chatObservers.add((ChatObserver) obs);
         }
+
+        if (obs instanceof OnGetChatHistoryObserver) {
+            onGetChatHistoryObservers.add((OnGetChatHistoryObserver) obs);
+        }
+
     }
 
     public void removeObserver(Object obs) {
@@ -236,6 +246,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         if (obs instanceof ChatObserver) {
             chatObservers.remove(obs);
+        }
+
+        if (obs instanceof OnGetChatHistoryObserver) {
+            onGetChatHistoryObservers.remove(obs);
         }
     }
 
@@ -377,6 +391,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
             if (object instanceof TdApi.Chat) {
                 for (ChatObserver observer : chatObservers) {
                     observer.proceed((TdApi.Chat) object);
+                }
+                return;
+            }
+
+            if (object instanceof TdApi.Messages) {
+                for (OnGetChatHistoryObserver observer : onGetChatHistoryObservers) {
+                    observer.proceed((TdApi.Messages) object);
                 }
                 return;
             }

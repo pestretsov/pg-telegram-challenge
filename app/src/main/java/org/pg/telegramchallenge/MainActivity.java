@@ -1,12 +1,14 @@
 package org.pg.telegramchallenge;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.transition.Slide;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -19,19 +21,22 @@ import static org.pg.telegramchallenge.ObserverApplication.OnErrorObserver;
 public class MainActivity extends AppCompatActivity implements OnAuthObserver, OnErrorObserver{
 
     private FragmentManager fragmentManager = getSupportFragmentManager();
-    private FragmentTransaction fragmentTransaction = null;
+    private FragmentTransaction ft = null;
 
     private Fragment getCurrentFragment() {
         return fragmentManager.findFragmentById(R.id.base_fragment);
     }
 
+
     public void replaceFragment(Fragment f, boolean addToBackStack) {
-        fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.base_fragment, f);
+        ft = fragmentManager.beginTransaction();
+        ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_left);
+
+        ft.replace(R.id.base_fragment, f);
         if (addToBackStack) {
-            fragmentTransaction.addToBackStack(f.getClass().getName());
+            ft.addToBackStack(f.getClass().getName());
         }
-        fragmentTransaction.commit();
+        ft.commit();
     }
 
     @Override

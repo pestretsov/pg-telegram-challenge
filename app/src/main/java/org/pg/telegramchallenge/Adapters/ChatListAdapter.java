@@ -1,5 +1,6 @@
 package org.pg.telegramchallenge.Adapters;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
@@ -11,7 +12,9 @@ import android.view.View.OnClickListener;
 import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TdApi;
+import org.pg.telegramchallenge.ChatFragment;
 import org.pg.telegramchallenge.ChatListFragment;
+import org.pg.telegramchallenge.MainActivity;
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
 import org.pg.telegramchallenge.utils.Utils;
@@ -32,19 +35,22 @@ import java.util.Observer;
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
         implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
-        ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver {
+        ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver,
+        ObserverApplication.OnUpdateNewMessageObserver {
 
     private static volatile List<Long> chatList = new LinkedList<>();
     private static volatile Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
+    private MainActivity activity;
 
     public ChatListAdapter() {
 
     }
 
-    public ChatListAdapter(Context context) {
+    public ChatListAdapter(Context context, Activity activity) {
         this.context = (ObserverApplication) context;
+        this.activity = (MainActivity) activity;
     }
 
     @Override
@@ -56,7 +62,11 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             @Override
             public void onChatClick(long chatId) {
                 Log.e("CLICK", String.valueOf(chatId));
-                Toast.makeText(context, String.valueOf(chatId), Toast.LENGTH_SHORT).show();
+//                Toast.makeText(context, String.valueOf(chatId), Toast.LENGTH_SHORT).show();
+
+//                getApplication().sendRequest(new TdApi.OpenChat(chatId));
+
+                activity.replaceFragment(ChatFragment.newInstance(chatId), true);
             }
         });
 
@@ -83,27 +93,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
     public ObserverApplication getApplication() {
         return context;
-    }
-
-    public void updateMessage(TdApi.Message message) {
-        if (chatMap.containsKey(message.chatId)) {
-            TdApi.Chat chat = chatMap.get(message.chatId);
-
-            chat.topMessage = message;
-
-            if (message.sendState instanceof TdApi.MessageIsIncoming) {
-                chat.unreadCount += 1;
-                chat.lastReadOutboxMessageId = chat.topMessage.id;
-            } else {
-                chat.lastReadInboxMessageId = chat.topMessage.id;
-            }
-            updateData(chat);
-        } else {
-            chatMap.put(message.chatId, null);
-            chatList.add(message.chatId);
-            getApplication().sendRequest(new TdApi.GetChat(message.chatId));
-
-        }
     }
 
     public void updateChatTitle(TdApi.UpdateChatTitle title) {
@@ -259,13 +248,35 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     @Override
     public void proceed(TdApi.UpdateUserAction obj) {
         if (obj.action instanceof TdApi.SendMessageTypingAction) {
-            if (ObserverApplication.userMe != null && obj.chatId == ObserverApplication.userMe.id) {
-                chatMap.get(obj.chatId).lastReadOutboxMessageId = chatMap.get(obj.chatId).topMessage.id;
-                chatMap.get(obj.chatId).lastReadInboxMessageId = chatMap.get(obj.chatId).topMessage.id;
-                chatMap.get(obj.chatId).unreadCount = 0;
-                this.notifyItemChanged(chatList.indexOf(obj.chatId));
-            }
+//            if (ObserverApplication.userMe != null && obj.chatId == ObserverApplication.userMe.id) {
+//                chatMap.get(obj.chatId).lastReadOutboxMessageId = chatMap.get(obj.chatId).topMessage.id;
+//                chatMap.get(obj.chatId).lastReadInboxMessageId = chatMap.get(obj.chatId).topMessage.id;
+//                chatMap.get(obj.chatId).unreadCount = 0;
+//                this.notifyItemChanged(chatList.indexOf(obj.chatId));
+//            }
 
+        }
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateNewMessage obj) {
+        TdApi.Message msg = obj.message;
+        if (chatMap.containsKey(msg.chatId)) {
+            TdApi.Chat chat = chatMap.get(msg.chatId);
+
+            chat.topMessage = msg;
+
+            if (msg.sendState instanceof TdApi.MessageIsIncoming) {
+                chat.unreadCount += 1;
+                Log.e("UNREAD", String.valueOf(chat.unreadCount));
+            } else {
+                chat.unreadCount = 0;
+            }
+            updateData(chat);
+        } else {
+//            chatMap.put(message.chatId, null);
+//            chatList.add(message.chatId);
+            getApplication().sendRequest(new TdApi.GetChat(msg.chatId));
         }
     }
 
