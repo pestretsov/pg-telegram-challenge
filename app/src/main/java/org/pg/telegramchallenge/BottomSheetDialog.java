@@ -20,6 +20,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import org.pg.telegramchallenge.Adapters.BottomSheetAdapter;
+import org.pg.telegramchallenge.utils.Utils;
 
 /**
  * Class to show media attachment panel of the bottom of activity or fragment.
@@ -98,7 +99,7 @@ public class BottomSheetDialog implements LoaderManager.LoaderCallbacks<Cursor>,
         mBottomSheetDialog.getWindow ().setLayout (LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         mBottomSheetDialog.getWindow ().setGravity (Gravity.BOTTOM);
-        mBottomSheetDialog.show ();
+        mBottomSheetDialog.show();
     }
 
     /**
@@ -123,8 +124,8 @@ public class BottomSheetDialog implements LoaderManager.LoaderCallbacks<Cursor>,
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        mAdapter = new BottomSheetAdapter(mContext, cursor);
         if (mRecycler!=null) {
+            mAdapter = new BottomSheetAdapter(mContext, cursor);
             mProgressBar.setVisibility(View.GONE);
             mRecycler.setAdapter(mAdapter);
             mRecycler.setVisibility(View.VISIBLE);
