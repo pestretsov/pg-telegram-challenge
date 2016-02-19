@@ -38,8 +38,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver,
         ObserverApplication.OnUpdateNewMessageObserver {
 
-    private static volatile List<Long> chatList = new LinkedList<>();
-    private static volatile Map<Long, TdApi.Chat> chatMap = new HashMap<>();
+    private static List<Long> chatList = new LinkedList<>();
+    private static Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
     private MainActivity activity;
@@ -60,7 +60,8 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
         ChatListVH viewHolder = new ChatListVH(view, new ChatListVH.OnChatClickListener() {
             @Override
-            public void onChatClick(long chatId) {
+            public void onChatClick(int position) {
+                long chatId = chatList.get(position);
                 Log.e("CLICK", String.valueOf(chatId));
 //                Toast.makeText(context, String.valueOf(chatId), Toast.LENGTH_SHORT).show();
 
@@ -294,11 +295,11 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
         @Override
         public void onClick(View v) {
-            mListener.onChatClick(chatList.get(getAdapterPosition()));
+            mListener.onChatClick(getAdapterPosition());
         }
 
         public interface OnChatClickListener {
-            void onChatClick(long chatId);
+            void onChatClick(int pos);
         }
     }
 }

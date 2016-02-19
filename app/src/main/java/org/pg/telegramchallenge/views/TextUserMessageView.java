@@ -75,8 +75,6 @@ public class TextUserMessageView extends BaseUserMessageView {
         int widthWithoutPadding = width - getPaddingRight() - getPaddingLeft();
         int textWidth = widthWithoutPadding - dpToPx(dpAvatarRadius*2, c) - dpToPx(mTextPadding, c);
 
-        Log.e("VIEW", mText.toString());
-
         if (mTextLayout == null) { // i guess it would be fine for recycler view
             mTextLayout = new DynamicLayout(mText, mTextPaint, textWidth, Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
         }
@@ -115,6 +113,7 @@ public class TextUserMessageView extends BaseUserMessageView {
         int avatarDiameter = dpToPx(dpAvatarRadius*2, c);
         float textStartY = top + (mDetailsVisibility ? (avatarDiameter - mTextSize) :0);
         canvas.translate(left + avatarDiameter + dpToPx(mTextPadding, c), textStartY);
+        Log.e(TAG, mTextLayout.getText().toString());
         mTextLayout.draw(canvas);
         canvas.restore();
     }

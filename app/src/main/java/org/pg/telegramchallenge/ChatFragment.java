@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,8 +36,8 @@ public class ChatFragment extends Fragment {
         return (ObserverApplication) getActivity().getApplication();
     }
 
-    public ChatFragment() {
-        // Required empty public constructor
+    public ChatFragment(){
+        Log.e("TEST", "ChatFragment CREATED");
     }
 
     public static ChatFragment newInstance(long chatId) {
@@ -57,7 +58,6 @@ public class ChatFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat, container, false);
 
-
         Bundle args = getArguments();
         chatId = args.getLong("chatId", 0);
         myId = ObserverApplication.userMe.id;
@@ -75,7 +75,8 @@ public class ChatFragment extends Fragment {
         chatRecyclerView.setLayoutManager(layoutManager);
         chatRecyclerView.setAdapter(chatAdapter);
 
-        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, 0, 0, 50));
+        Log.e("FRAGMENT CHAT", "onCreateView" + String.valueOf(chatId));
+        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, 0, 0, 20));
 
         return view;
     }
@@ -84,8 +85,12 @@ public class ChatFragment extends Fragment {
     public void onResume() {
         super.onResume();
 
+//        getApplication().addObserver(this);
+        Log.e("CHAT FRAGMENT", "onResume");
+
         getApplication().addObserver(this);
         getApplication().addObserver(chatAdapter);
+
     }
 
     @Override
@@ -96,6 +101,7 @@ public class ChatFragment extends Fragment {
         getApplication().sendRequest(new TdApi.CloseChat(chatId));
         getApplication().removeObserver(this);
         getApplication().removeObserver(chatAdapter);
+
     }
 
 }

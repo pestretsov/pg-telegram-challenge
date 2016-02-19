@@ -12,6 +12,7 @@ import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.MainActivity;
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
+import org.pg.telegramchallenge.views.ChatListItemView;
 import org.pg.telegramchallenge.views.TextUserMessageView;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     private Context context;
     private MainActivity activity;
 
-    private static volatile List<TdApi.Message> messagesList = new ArrayList<>();
+    private List<TdApi.Message> messagesList = new ArrayList<>();
 
     public ChatAdapter(Context context, Activity activity, long chatId) {
         this.chatId = chatId;
@@ -51,17 +52,20 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
         if (messagesList == null) {
             return;
         }
+//
+//        holder.chatItemView.setBarVisability(false);
+//        holder.chatItemView.setDateVisability(false);
 
         String text = "Три";
         if (messagesList.get(position).content instanceof TdApi.MessageText && ((TdApi.MessageText) messagesList.get(position).content).text.length() > 0) {
-            ((TdApi.MessageText)messagesList.get(position).content).text = text;
-            holder.chatItemView.setText(((TdApi.MessageText)messagesList.get(position).content).text);
+//            ((TdApi.MessageText)messagesList.get(position).content).text = text;
+            text = ((TdApi.MessageText)messagesList.get(position).content).text;
+//            Log.e("CHECK", String.valueOf(text.toString().length()));
+            holder.chatItemView.setText(text.toString());
         } else {
+//            holder.chatItemView.setText(text);
             holder.chatItemView.setText(text);
         }
-
-        holder.chatItemView.setBarVisability(false);
-        holder.chatItemView.setDateVisability(false);
     }
 
 
@@ -79,6 +83,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
         }
 
         this.notifyItemRangeInserted(lastPos, obj.totalCount);
+//        this.notifyDataSetChanged();
         lastPos+=obj.totalCount;
     }
 
