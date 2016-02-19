@@ -8,6 +8,7 @@ import android.text.*;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.AttributeSet;
 
@@ -18,6 +19,7 @@ import android.widget.Toast;
 import org.pg.telegramchallenge.R;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static org.pg.telegramchallenge.utils.Utils.*;
@@ -164,10 +166,16 @@ public class TextUserMessageView extends BaseUserMessageView {
     }
 
     private void setText(CharSequence s, boolean invalidate) {
-        mText.clearSpans();
+
+        // this is so fucking lame
+        Object[] spans = mText.getSpans(0, mText.length(), Object.class);
+        for (Object o: spans) {
+            if (!(o instanceof SpanWatcher))
+                mText.removeSpan(o);
+        }
+
         if (s!=mText) {
-            mText.clear();
-            mText.append(s);
+            mText.replace(0, mText.length(), s);
         }
 
         Linkify.addLinks(mText, Linkify.WEB_URLS|Linkify.PHONE_NUMBERS);
