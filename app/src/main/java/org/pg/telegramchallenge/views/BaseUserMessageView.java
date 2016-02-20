@@ -40,6 +40,10 @@ public class BaseUserMessageView extends BaseChatItemView {
     private TextPaint mInitialsTextPaint;
     private int mAvatarColor = Color.BLUE;
 
+    public void setTitle(String mTitleText) {
+        this.mTitleText = mTitleText;
+    }
+
     private String mTitleText;
 
     private TextPaint mTitleTextPaint;

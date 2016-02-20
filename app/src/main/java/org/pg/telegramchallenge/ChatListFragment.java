@@ -107,6 +107,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     public void onResume() {
         super.onResume();
 
+
         getApplication().addObserver(this);
         getApplication().addObserver(chatListAdapter);
     }
@@ -115,8 +116,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     public void onPause(){
         super.onPause();
 
-//        getApplication().removeObserver(this);
-//        getApplication().removeObserver(chatListAdapter);
+        getApplication().removeObserver(this);
+        getApplication().removeObserver(chatListAdapter);
     }
 
     @Override
@@ -204,7 +205,9 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         } catch (InterruptedException e) {
 
         }
-
+//
+//        offsetChatId = 0;
+//        offsetOrder = 9223372036854775807L;
         getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
         String fullName = Utils.getFullName(ObserverApplication.userMe.firstName, ObserverApplication.userMe.lastName);

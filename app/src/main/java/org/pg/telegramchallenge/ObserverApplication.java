@@ -25,6 +25,8 @@ public class ObserverApplication extends Application implements Client.ResultHan
     public static volatile Context appContext;
     public static final String TAG = ObserverApplication.class.getSimpleName();
 
+    public static final int PRIVATE_CHAT_INFO = 0, GROUP_CHAT_INFO = 1, SECRET_CHAT_INFO = 2, CHANNEL_CHAT_INFO = 3;
+
     public static volatile TdApi.User userMe;
 
     static {
@@ -123,6 +125,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
         void proceed(TdApi.Chat obj);
     }
 
+    private volatile List<ConcreteChatObserver> concreteChatObservers = new LinkedList<>();
+
+    public interface ConcreteChatObserver {
+        long getChatId();
+        void proceedConcrete(TdApi.UpdateNewMessage obj);
+    }
+
     private volatile List<OnUpdateFileObserver> onUpdateFileObservers = new LinkedList<>();
     public interface OnUpdateFileObserver {
         void proceed(TdApi.UpdateFile obj);
@@ -201,6 +210,21 @@ public class ObserverApplication extends Application implements Client.ResultHan
             onGetChatHistoryObservers.add((OnGetChatHistoryObserver) obs);
         }
 
+        if (obs instanceof ConcreteChatObserver) {
+            concreteChatObservers.add((ConcreteChatObserver) obs);
+        }
+    }
+
+    public boolean isSubscribed(Object obj) {
+        if (obj instanceof ChatObserver && chatObservers.contains(obj)) {
+            return true;
+        }
+
+        if (obj instanceof OnUpdateNewMessageObserver && onUpdateNewMessageObservers.contains(obj)) {
+            return true;
+        }
+
+        return false;
     }
 
     public void removeObserver(Object obs) {
@@ -251,8 +275,11 @@ public class ObserverApplication extends Application implements Client.ResultHan
         if (obs instanceof OnGetChatHistoryObserver) {
             onGetChatHistoryObservers.remove(obs);
         }
-    }
 
+        if (obs instanceof ConcreteChatObserver) {
+            concreteChatObservers.remove(obs);
+        }
+    }
 
     private List <TdApi.TLFunction> requestPool = new LinkedList<>();
 
@@ -312,6 +339,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
                     for (OnUpdateNewMessageObserver observer : onUpdateNewMessageObservers) {
                         observer.proceed((TdApi.UpdateNewMessage) object);
                     }
+
+                    for (ConcreteChatObserver observer : concreteChatObservers) {
+                        if (observer.getChatId() == ((TdApi.UpdateNewMessage) object).message.chatId) {
+                            observer.proceedConcrete((TdApi.UpdateNewMessage) object);
+                        }
+                    }
+
                     return;
                 }
 
@@ -357,6 +391,9 @@ public class ObserverApplication extends Application implements Client.ResultHan
                     return;
                 }
 
+
+
+                // TODO: REVISE
 //                if (object instanceof TdApi.UpdateUser) {
 //                    if (userMe == null) {
 //                        userMe = ((TdApi.UpdateUser) object).user;

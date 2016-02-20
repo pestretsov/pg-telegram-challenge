@@ -3,6 +3,7 @@ package org.pg.telegramchallenge.Adapters;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -38,7 +39,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver,
         ObserverApplication.OnUpdateNewMessageObserver {
 
-    private static List<Long> chatList = new LinkedList<>();
+    private static LinkedList<Long> chatList = new LinkedList<>();
     private static Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
@@ -51,6 +52,10 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     public ChatListAdapter(Context context, Activity activity) {
         this.context = (ObserverApplication) context;
         this.activity = (MainActivity) activity;
+
+        if (chatList.size() != 0) {
+            this.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -62,12 +67,10 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             @Override
             public void onChatClick(int position) {
                 long chatId = chatList.get(position);
-                Log.e("CLICK", String.valueOf(chatId));
-//                Toast.makeText(context, String.valueOf(chatId), Toast.LENGTH_SHORT).show();
 
-//                getApplication().sendRequest(new TdApi.OpenChat(chatId));
+                TdApi.Chat clickedChat = chatMap.get(chatId);
 
-                activity.replaceFragment(ChatFragment.newInstance(chatId), true);
+                activity.replaceFragment(ChatFragment.newInstance(clickedChat), true);
             }
         });
 
@@ -89,7 +92,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         }
 
         this.notifyItemRangeChanged(left, chats.length);
-//        this.notifyItemRangeInserted(right, chats.length);
+//        this.notifyItemRangeInserted(left, chats.length);
     }
 
     public ObserverApplication getApplication() {
@@ -104,17 +107,20 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     }
 
     public void updateData(TdApi.Chat chat) {
-        int position = 0;
+
         if (chatMap.containsKey(chat.id)) {
-
             // rearrange items in list
-            position = chatList.indexOf(chat.id);
-            chatList.remove(chat.id);
-            chatList.add(0, chat.id);
+            int position = chatList.indexOf(chat.id);
+            if (position == 0) {
+                chatMap.put(chat.id, chat);
+                this.notifyItemChanged(0);
+            } else {
+                chatList.remove(position);
+                chatList.addFirst(chat.id);
 
-            // update Chat itself
-            chatMap.put(chat.id, chat);
-            this.notifyItemRangeChanged(0, position+1);
+                chatMap.put(chat.id, chat);
+                this.notifyItemRangeChanged(0, position+1);
+            }
         } else {
             // add new Chat
             chatList.add(0, chat.id);
@@ -269,7 +275,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
             if (msg.sendState instanceof TdApi.MessageIsIncoming) {
                 chat.unreadCount += 1;
-                Log.e("UNREAD", String.valueOf(chat.unreadCount));
             } else {
                 chat.unreadCount = 0;
             }
