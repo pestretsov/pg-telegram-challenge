@@ -136,7 +136,7 @@ public class AuthPhoneNumberFragment extends Fragment implements Acceptable, Obs
         countryName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity) getActivity()).replaceFragment(CountrySelectFragment.newInstance(), true);
+                ((ChatListActivity) getActivity()).replaceFragment(CountrySelectFragment.newInstance(), true);
             }
         });
 

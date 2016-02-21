@@ -12,7 +12,6 @@ import android.widget.Toast;
 import org.drinkless.td.libcore.telegram.Client;
 import org.drinkless.td.libcore.telegram.TG;
 import org.drinkless.td.libcore.telegram.TdApi;
-import org.pg.telegramchallenge.MainActivity;
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
 
@@ -25,27 +24,11 @@ public class HandlerService extends Service implements Client.ResultHandler {
 
     private static final String TAG = HandlerService.class.getSimpleName();
 
-    private static final int LOG_ERROR = 1, LOG_VERBOSE = 5, LOG_ASSERT = 0, LOG_WARNING = 2, LOG_INFO = 3, LOG_DEBUG = 4;
-
     @Override
     public void onCreate() {
         super.onCreate();
 
-        final String dir = getExternalFilesDir(null).getAbsolutePath()
-                + File.separator
-                + getString(R.string.db_folder_name);
-
-        File dirFile = new File(dir);
-        if (!dirFile.exists()){
-            dirFile.mkdirs();
-        }
-
         ObserverApplication application = (ObserverApplication)getApplicationContext();
-
-        TG.setDir(dir);
-        TG.setUpdatesHandler(application);
-        TG.setFileLogEnabled(false);
-        TG.setLogVerbosity(LOG_ERROR);
 
         // when service is created, requests from pull can be invoked
         application.invokeRequestPool();

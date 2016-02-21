@@ -1,43 +1,30 @@
 package org.pg.telegramchallenge;
 
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.nfc.Tag;
-import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 
@@ -46,16 +33,13 @@ import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatListAdapter;
 import org.pg.telegramchallenge.utils.AvatarImageView;
 import org.pg.telegramchallenge.utils.Utils;
-import org.pg.telegramchallenge.views.BaseChatItemView;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
 import java.util.concurrent.CountDownLatch;
 
-
-/**
- * A simple {@link Fragment} subclass.
- */
-public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver, ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver{
+public class ChatListActivity extends AppCompatActivity implements ObserverApplication.OnAuthObserver, ObserverApplication.OnErrorObserver,
+        ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver,
+        ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -86,60 +70,32 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
 
-    public ObserverApplication getApplication(){
-        return (ObserverApplication) getActivity().getApplication();
-    }
-
-    public ChatListFragment() {
-        // Required empty public constructor
-    }
-
-    public static ChatListFragment newInstance() {
-
-        Bundle args = new Bundle();
-
-        ChatListFragment fragment = new ChatListFragment();
-        fragment.setArguments(args);
-        return fragment;
+    public ObserverApplication getObserverApplication(){
+        return (ObserverApplication) getApplication();
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_chat_list);
 
+        getObserverApplication().addObserver(this);
+        getObserverApplication().addObserver(chatListAdapter);
 
-        getApplication().addObserver(this);
-        getApplication().addObserver(chatListAdapter);
-    }
-
-    @Override
-    public void onPause(){
-        super.onPause();
-
-        getApplication().removeObserver(this);
-        getApplication().removeObserver(chatListAdapter);
-    }
-
-    @Override
-    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
-
-        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
-        navigationView = (NavigationView) view.findViewById(R.id.navigation_view);
-        drawerLayout = (DrawerLayout) view.findViewById(R.id.drawer_layout);
-        chatListRecyclerView = (RecyclerView)view.findViewById(R.id.chat_list_recycler_view);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        navigationView = (NavigationView) findViewById(R.id.navigation_view);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        chatListRecyclerView = (RecyclerView) findViewById(R.id.chat_list_recycler_view);
 
         if (toolbar != null) {
             toolbar.setTitle(R.string.chat_list_title);
 
             toolbar.setNavigationIcon(R.drawable.ic_menu);
-            toolbar.setPadding(0, Utils.getStatusBarHeight(getActivity()), 0, 0);
-            setHasOptionsMenu(true);
+            toolbar.setPadding(0, Utils.getStatusBarHeight(this), 0, 0);
 
-            ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+            this.setSupportActionBar(toolbar);
 
-            ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(getActivity(), drawerLayout,
+            ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
                     toolbar, R.string.open_drawer, R.string.close_drawer) {
 
                 @Override
@@ -157,14 +113,14 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
             actionBarDrawerToggle.syncState();
         }
 
-        layoutManager = new LinearLayoutManager(getActivity());
+        layoutManager = new LinearLayoutManager(this);
         // if changeAnimation is enabled it looks like shit; try it yourself
         ((SimpleItemAnimator)chatListRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 
-        chatListAdapter = new ChatListAdapter(getApplication(), (MainActivity) getActivity());
+        chatListAdapter = new ChatListAdapter(getObserverApplication(), this);
         chatListRecyclerView.setAdapter(chatListAdapter);
         chatListRecyclerView.setLayoutManager(layoutManager);
-        chatListRecyclerView.addItemDecoration(new ItemDivider(getContext(), R.drawable.chat_list_divider));
+        chatListRecyclerView.addItemDecoration(new ItemDivider(this, R.drawable.chat_list_divider));
 
         chatListRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -183,14 +139,14 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 }
 
                 if (!loading && totalItems - visibleItems <= firstVisibleItem + visibleThreshold) {
-                    getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
+                    getObserverApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
                     loading = true;
                 }
             }
         });
 
-        getApplication().sendRequest(new TdApi.GetMe(), new Client.ResultHandler() {
+        getObserverApplication().sendRequest(new TdApi.GetMe(), new Client.ResultHandler() {
             @Override
             public void onResult(TdApi.TLObject object) {
                 if (object instanceof TdApi.User) {
@@ -208,7 +164,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 //
 //        offsetChatId = 0;
 //        offsetOrder = 9223372036854775807L;
-        getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
+        getObserverApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
         String fullName = Utils.getFullName(ObserverApplication.userMe.firstName, ObserverApplication.userMe.lastName);
         String phoneNumber = "+" + ObserverApplication.userMe.phoneNumber;
@@ -224,7 +180,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         glideTarget = new ViewTarget<ImageView, Bitmap>(userProfilePhoto) {
             @Override
             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
+                RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getResources(), resource);
                 roundedBitmapDrawable.setCircular(true);
                 ((ImageView)header.findViewById(R.id.userMe_image)).setImageDrawable(roundedBitmapDrawable);
             }
@@ -237,22 +193,34 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
             avatarImageFilePath = null;
 
             if (ObserverApplication.userMe.profilePhoto.big.id != 0) {
-                getApplication().sendRequest(new TdApi.DownloadFile(ObserverApplication.userMe.profilePhoto.big.id));
+                getObserverApplication().sendRequest(new TdApi.DownloadFile(ObserverApplication.userMe.profilePhoto.big.id));
             }
         }
 
-        return view;
     }
 
     @Override
-    public void proceed(TdApi.UpdateChatTitle obj) {
-        chatListAdapter.updateChatTitle(obj);
+    protected void onResume() {
+        super.onResume();
+
+        ObserverApplication application = getObserverApplication();
+
+//        application.addObserver(this);
+
+        if (getCurrentFragment()==null)
+            application.sendRequest(new TdApi.GetAuthState());
     }
+
 
     @Override
-    public void proceed(TdApi.Error err) {
+    protected void onPause() {
+        super.onPause();
+
+        ObserverApplication application = getObserverApplication();
+        application.removeObserver(this);
     }
 
+    // TDAPI
     @Override
     public void proceed(TdApi.Chats obj) {
         int n = obj.chats.length;
@@ -266,11 +234,76 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     }
 
     @Override
+    public void proceed(TdApi.UpdateChatTitle obj) {
+        chatListAdapter.updateChatTitle(obj);
+    }
+
+    @Override
+    public void proceed(TdApi.Error err) {
+    }
+
+    @Override
     public void proceed(TdApi.UpdateChatOrder obj) {
         // TODO: OR THAT ?
 //        offsetOrder = obj.order;
 //        offsetChatId = obj.chatId;
     }
+
+    @Override
+    public void proceed(TdApi.UpdateFile obj) {
+        if (obj.file.id == ObserverApplication.userMe.profilePhoto.big.id) {
+            ObserverApplication.userMe.profilePhoto.big = obj.file;
+            avatarImageFilePath = ObserverApplication.userMe.profilePhoto.big.path;
+//            Glide.with(getActivity()).load(avatarImageFilePath).asBitmap().fitCenter().into(glideTarget);
+        }
+    }
+
+    @Override
+    public void proceed(TdApi.AuthState obj) {
+        switch (obj.getConstructor()) {
+            case TdApi.AuthStateWaitPhoneNumber.CONSTRUCTOR:
+                if (getCurrentFragment() instanceof AuthPhoneNumberFragment)
+                    break;
+                replaceFragment(AuthPhoneNumberFragment.newInstance(), false);
+                break;
+
+            case TdApi.AuthStateWaitCode.CONSTRUCTOR:
+                replaceFragment(AuthCodeFragment.newInstance(), true);
+                break;
+
+            case TdApi.AuthStateOk.CONSTRUCTOR:
+                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                break;
+            case TdApi.AuthStateWaitName.CONSTRUCTOR:
+                replaceFragment(AuthNameFragment.newInstance(), true);
+                break;
+
+            default:
+                Toast.makeText(this, obj.toString(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    // FRAGMENT MANAGEMENT
+    private FragmentManager fragmentManager = getSupportFragmentManager();
+    private FragmentTransaction ft = null;
+
+
+    private Fragment getCurrentFragment() {
+        return fragmentManager.findFragmentById(R.id.base_fragment);
+    }
+
+    public void replaceFragment(Fragment f, boolean addToBackStack) {
+        ft = fragmentManager.beginTransaction();
+        ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_left);
+
+        ft.replace(R.id.base_fragment, f);
+        if (addToBackStack) {
+            ft.addToBackStack(f.getClass().getName());
+        }
+        ft.commit();
+    }
+
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {
 
@@ -316,22 +349,5 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                 mDivider.draw(c);
             }
         }
-    }
-
-    @Override
-    public void proceed(TdApi.UpdateFile obj) {
-        if (obj.file.id == ObserverApplication.userMe.profilePhoto.big.id) {
-            ObserverApplication.userMe.profilePhoto.big = obj.file;
-            avatarImageFilePath = ObserverApplication.userMe.profilePhoto.big.path;
-//            Glide.with(getActivity()).load(avatarImageFilePath).asBitmap().fitCenter().into(glideTarget);
-        }
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        // need to clear ACCEPT icon which is added inside Activity's onCreateOptionsMenu method
-        menu.clear();
-        inflater.inflate(R.menu.menu_chat_list, menu);
     }
 }

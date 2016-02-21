@@ -2,34 +2,25 @@ package org.pg.telegramchallenge.Adapters;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
-import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.ChatFragment;
-import org.pg.telegramchallenge.ChatListFragment;
-import org.pg.telegramchallenge.MainActivity;
+import org.pg.telegramchallenge.ChatListActivity;
+
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
 import org.pg.telegramchallenge.utils.Utils;
 import org.pg.telegramchallenge.views.ChatListItemView;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Observer;
 
 /**
  * Created by artemypestretsov on 1/4/16.
@@ -43,7 +34,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     private static Map<Long, TdApi.Chat> chatMap = new HashMap<>();
 
     private ObserverApplication context;
-    private MainActivity activity;
+    private ChatListActivity activity;
 
     public ChatListAdapter() {
 
@@ -51,7 +42,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
     public ChatListAdapter(Context context, Activity activity) {
         this.context = (ObserverApplication) context;
-        this.activity = (MainActivity) activity;
+        this.activity = (ChatListActivity) activity;
 
         if (chatList.size() != 0) {
             this.notifyDataSetChanged();

@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.drinkless.td.libcore.telegram.TdApi;
-import org.pg.telegramchallenge.MainActivity;
+import org.pg.telegramchallenge.ChatListActivity;
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
 import org.pg.telegramchallenge.utils.Utils;
@@ -32,7 +32,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     private int lastPos = 0;
 
     private Context context;
-    private MainActivity activity;
+    private ChatListActivity activity;
 
     private LinkedList<TdApi.Message> messagesList = new LinkedList<>();
     private Map<Integer, TdApi.User> usersMap = new HashMap<>();
@@ -41,7 +41,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
         this.chatId = chatId;
 
         this.context = (ObserverApplication) context;
-        this.activity = (MainActivity) activity;
+        this.activity = (ChatListActivity) activity;
 
         for (TdApi.User user : users) {
             usersMap.put(user.id, user);

@@ -12,6 +12,7 @@ import org.drinkless.td.libcore.telegram.TG;
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.service.HandlerService;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +27,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
     public static final String TAG = ObserverApplication.class.getSimpleName();
 
     public static final int PRIVATE_CHAT_INFO = 0, GROUP_CHAT_INFO = 1, SECRET_CHAT_INFO = 2, CHANNEL_CHAT_INFO = 3;
+    private static final int LOG_ERROR = 1, LOG_VERBOSE = 5, LOG_ASSERT = 0, LOG_WARNING = 2, LOG_INFO = 3, LOG_DEBUG = 4;
 
     public static volatile TdApi.User userMe;
 
@@ -47,6 +49,23 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         handler = new Handler();
         startService(new Intent(this, HandlerService.class));
+
+
+        final String dir = getExternalFilesDir(null).getAbsolutePath()
+                + File.separator
+                + getString(R.string.db_folder_name);
+
+        File dirFile = new File(dir);
+        if (!dirFile.exists()){
+            dirFile.mkdirs();
+        }
+
+        TG.setDir(dir);
+        TG.setUpdatesHandler(this);
+        TG.setFileLogEnabled(false);
+        TG.setLogVerbosity(LOG_ERROR);
+
+        Log.e(TAG, "onCreate");
     }
 
 //    private static final List<Class> interfaces;
