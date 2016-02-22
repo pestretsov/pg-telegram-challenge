@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -281,6 +282,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
             updateData(chat);
         } else {
 //            chatMap.put(message.chatId, null);
+
 //            chatList.add(message.chatId);
             getApplication().sendRequest(new TdApi.GetChat(msg.chatId));
         }

@@ -29,6 +29,9 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
     public static volatile TdApi.User userMe;
 
+
+    private static LinkedList<TdApi.UpdateNewMessage> pendingUpdates = new LinkedList<>();
+
     static {
         try {
             System.loadLibrary("tdjni");
@@ -172,6 +175,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
         if (obs instanceof OnUpdateNewMessageObserver) {
             onUpdateNewMessageObservers.add((OnUpdateNewMessageObserver) obs);
+
+            for (TdApi.UpdateNewMessage upd : pendingUpdates) {
+                ((OnUpdateNewMessageObserver) obs).proceed(upd);
+            }
+
+            pendingUpdates.clear();
+
         }
 
         if (obs instanceof OnUpdateUserActionObserver) {
@@ -336,6 +346,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 }
 
                 if (object instanceof TdApi.UpdateNewMessage) {
+                    if (onUpdateNewMessageObservers.size() == 0) {
+                        pendingUpdates.addLast((TdApi.UpdateNewMessage) object);
+                    }
+
                     for (OnUpdateNewMessageObserver observer : onUpdateNewMessageObservers) {
                         observer.proceed((TdApi.UpdateNewMessage) object);
                     }

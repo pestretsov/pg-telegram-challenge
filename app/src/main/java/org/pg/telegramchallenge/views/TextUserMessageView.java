@@ -115,7 +115,6 @@ public class TextUserMessageView extends BaseUserMessageView {
         int avatarDiameter = dpToPx(dpAvatarRadius*2, c);
         float textStartY = top + (mDetailsVisibility ? (avatarDiameter - mTextSize) :0);
         canvas.translate(left + avatarDiameter + dpToPx(mTextPadding, c), textStartY);
-        Log.e(TAG, mTextLayout.getText().toString());
         mTextLayout.draw(canvas);
         canvas.restore();
     }

@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ChatFragment extends Fragment implements ObserverApplication.ChatObserver, ObserverApplication.ConcreteChatObserver {
+public class ChatFragment extends Fragment implements ObserverApplication.ChatObserver, ObserverApplication.ConcreteChatObserver,  ObserverApplication.OnGetChatHistoryObserver {
 
     private Toolbar toolbar;
     private RecyclerView chatRecyclerView;
@@ -37,6 +37,15 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
     private long chatId;
     private long myId;
+
+    private boolean loading = true;
+
+    // TODO: ROMAN - TRY DIFFERENT VISIBLE THRESHOLD AND OFFSET
+    private int totalItems, visibleThreshold = 20, firstVisible, totalVisible, previousTotal = 0;
+    private int offset = 10;
+
+
+    private int msgStartFromId = 0;
 
     public void setChat(TdApi.Chat chat) {
         this.chat = chat;
@@ -96,11 +105,41 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
         chatRecyclerView.setLayoutManager(layoutManager);
         chatRecyclerView.setItemAnimator(new DefaultItemAnimator());
 
+        chatRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                totalItems = layoutManager.getItemCount();
+                totalVisible = layoutManager.getChildCount();
+                firstVisible = layoutManager.findFirstVisibleItemPosition();
+
+                if (loading) {
+                    if (totalItems > previousTotal) {
+                        loading = false;
+                        previousTotal = totalItems;
+                    }
+                }
+
+                if (!loading && totalItems-totalVisible <= firstVisible + visibleThreshold) {
+                    getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, offset));
+
+                    loading = true;
+                }
+
+                Log.e("TAG_1", String.valueOf(layoutManager.findFirstVisibleItemPosition()));
+                Log.e("TAG_2", String.valueOf(layoutManager.findLastVisibleItemPosition()));
+                Log.e("TAG_3", String.valueOf(layoutManager.getChildCount()));
+                Log.e("TAG_4", String.valueOf(layoutManager.getItemCount()));
+                Log.e("TAG_5", String.valueOf(chatRecyclerView.getChildCount()));
+            }
+        });
+
         chatRecyclerView.setAdapter(chatAdapter);
 
 //        getApplication().sendRequest(new TdApi.GetChat(chatId));
 
-        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, 0, 0, 20));
+        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 30));
 
         return view;
     }
@@ -139,5 +178,10 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
     @Override
     public long getChatId() {
         return chatId;
+    }
+
+    @Override
+    public void proceed(TdApi.Messages obj) {
+        msgStartFromId = obj.messages[obj.totalCount-1].id;
     }
 }

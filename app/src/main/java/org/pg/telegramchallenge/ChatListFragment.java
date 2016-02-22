@@ -74,7 +74,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private String avatarImageFilePath = null;
 
     // TODO: set 25 (20)
-    private int visibleThreshold = 15;
+    private int visibleThreshold = 25;
     private boolean loading = true;
     // TODO: set 50
     private int limit = 50;
@@ -182,6 +182,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                     }
                 }
 
+                Log.e("TAG_1", String.valueOf(totalItems-visibleItems));
                 if (!loading && totalItems - visibleItems <= firstVisibleItem + visibleThreshold) {
                     getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
