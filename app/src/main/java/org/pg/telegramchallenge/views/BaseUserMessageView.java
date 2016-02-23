@@ -108,7 +108,7 @@ public class BaseUserMessageView extends BaseChatItemView {
 
         mTitleTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTitleTextSize, mTitleTextColor, null, null, mBoldTypeface);
 
-        mTimeTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTimeTextSize, mTimeTextColor, Paint.Align.RIGHT, null, null);
+        mTimeTextPaint = getTextPaint(Paint.ANTI_ALIAS_FLAG, mTimeTextSize, mTimeTextColor, Paint.Align.LEFT, null, null);
     }
 
     @Override
@@ -165,12 +165,20 @@ public class BaseUserMessageView extends BaseChatItemView {
                 mAvatarDrawable.draw(canvas);
             }
 
-            int titleStartX = left + avatarImageRadius*2 + dpToPx(mTextPadding, c);
+            int textPadding = dpToPx(mTextPadding, c);
+            int titleStartX = left + avatarImageRadius*2 + textPadding;
             int titleStartY = top + (int)mTitleTextSize;
-            canvas.drawText(mTitleText, titleStartX, titleStartY, mTitleTextPaint);
+
+            final String timeString = timeFormat.format(mDate.getTime());
+            int timeLength = (int) mTimeTextPaint.measureText(timeString);
+            int titleMaxLength = right - (timeLength + holdersPadding) - titleStartX;
+
+            String adjustedTitle = adjustString(mTitleText, titleMaxLength, mTitleTextPaint);
+            canvas.drawText(adjustedTitle, titleStartX, titleStartY, mTitleTextPaint);
 
             int timeStartY = (int) (top + mTitleTextSize); // to align them
-            canvas.drawText(timeFormat.format(mDate.getTime()), right, timeStartY, mTimeTextPaint);
+            int timeStartX = (int) (titleStartX + mTitleTextPaint.measureText(adjustedTitle) + holdersPadding);
+            canvas.drawText(timeString, timeStartX, timeStartY, mTimeTextPaint);
         }
     }
 

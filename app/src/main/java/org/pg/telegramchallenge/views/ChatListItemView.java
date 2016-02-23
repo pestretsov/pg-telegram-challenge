@@ -417,6 +417,11 @@ public class ChatListItemView extends View {
             invalidate();
     }
 
+    /**
+     * @deprecated use Calendar instead
+     * @param date
+     */
+    @Deprecated
     public void setDate(Date date){
         mDate = Calendar.getInstance();
         mDate.setTime(date);
