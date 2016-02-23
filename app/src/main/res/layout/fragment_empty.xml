@@ -31,7 +31,7 @@
             style="@style/TextUserMessageViewStyle"
             android:text="#Privet, @top kek.com @kek. Ya veseliy molochnik @Grigory, a ti pidor. #Ya \@lubil @tebya kak rodnogo, ah ti gnida neblagodarnaya"
             android:padding="16dp"
-            auto:titleText="Denis"
+            auto:titleText="Denis is pidorasblyatjsuuuuuka zhopaasd"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/message"

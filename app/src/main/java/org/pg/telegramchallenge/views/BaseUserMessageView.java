@@ -6,8 +6,10 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.TextPaint;
@@ -52,6 +54,23 @@ public class BaseUserMessageView extends BaseChatItemView {
     private int mTimeTextColor;
 
     private String mAvatarImageFilePath;
+    private ChatListItemView.MessageStatus mStatus = ChatListItemView.MessageStatus.UNREAD;
+
+    private static Drawable clockIcon, badgeIcon;
+    private static int badgeColor;
+
+    {
+        final Context context = getContext();
+        if (clockIcon == null)
+            clockIcon = ContextCompat.getDrawable(context, R.drawable.ic_clock);
+        if (badgeColor == 0) {
+            badgeColor = ContextCompat.getColor(context, R.color.accent_telegram_blue);
+        }
+        if (badgeIcon == null){
+            badgeIcon = ContextCompat.getDrawable(context, R.drawable.ic_badge);
+            badgeIcon.setColorFilter(badgeColor, PorterDuff.Mode.SRC_ATOP);
+        }
+    }
 
     public void setDetailsVisibility(boolean isVisible) {
 
@@ -169,9 +188,33 @@ public class BaseUserMessageView extends BaseChatItemView {
             int titleStartX = left + avatarImageRadius*2 + textPadding;
             int titleStartY = top + (int)mTitleTextSize;
 
+            float statusCenterY = titleStartY + (mTimeTextPaint.ascent() + mTimeTextPaint.descent())/2;
+            float iconRadius = 0;
+            switch (mStatus) {
+                case UNREAD:
+                    iconRadius = mTitleTextSize/4;
+//                    iconRadius = clockIcon.getIntrinsicHeight()/2;
+                    badgeIcon.setBounds((int)(right - iconRadius*2),
+                            (int)(statusCenterY-iconRadius),
+                            right,
+                            (int)(statusCenterY+iconRadius));
+                    badgeIcon.draw(canvas);
+                    break;
+                case DELIVERING:
+                    iconRadius = clockIcon.getIntrinsicHeight()/2;
+                    clockIcon.setBounds(right - (int)(iconRadius*2),
+                            (int)(statusCenterY - iconRadius),
+                            right,
+                            (int)(statusCenterY + iconRadius));
+                    clockIcon.draw(canvas);
+                    break;
+            }
+
             final String timeString = timeFormat.format(mDate.getTime());
             int timeLength = (int) mTimeTextPaint.measureText(timeString);
-            int titleMaxLength = right - (timeLength + holdersPadding) - titleStartX;
+            int titleMaxLength = right
+                    - (iconRadius==0?0:((int)(iconRadius*2) + holdersPadding))
+                    - (timeLength + holdersPadding) - titleStartX;
 
             String adjustedTitle = adjustString(mTitleText, titleMaxLength, mTitleTextPaint);
             canvas.drawText(adjustedTitle, titleStartX, titleStartY, mTitleTextPaint);
@@ -196,5 +239,13 @@ public class BaseUserMessageView extends BaseChatItemView {
                 .asBitmap()
                 .fitCenter()
                 .into(glideTarget);
+    }
+
+    public void setStatus(ChatListItemView.MessageStatus status) {
+        if (mStatus == status)
+            return;
+
+        mStatus = status;
+        invalidate();
     }
 }

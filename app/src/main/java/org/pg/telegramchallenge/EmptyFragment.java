@@ -39,7 +39,7 @@ public class EmptyFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_empty, container, false);
 
         ChatListItemView itemView = (ChatListItemView) view.findViewById(R.id.sample_view);
-        itemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
+        itemView.setStatus(ChatListItemView.MessageStatus.UNREAD);
 
         itemView.setOnClickListener(new View.OnClickListener() {
 
@@ -55,11 +55,13 @@ public class EmptyFragment extends Fragment {
         messageView.setOnClickListener(new View.OnClickListener() {
 
             boolean b = false;
+            int i = 0;
             @Override
             public void onClick(View v) {
-                ((BaseChatItemView) v).setDateVisability(b);
-                ((BaseChatItemView) v).setBarVisability(b);
-                ((BaseUserMessageView) v).setDetailsVisibility(b);
+//                ((BaseChatItemView) v).setDateVisability(b);
+//                ((BaseChatItemView) v).setBarVisability(b);
+//                ((BaseUserMessageView) v).setDetailsVisibility(b);
+                ((BaseUserMessageView) v).setStatus(ChatListItemView.MessageStatus.values()[i++%3]);
 
                 b = !b;
 

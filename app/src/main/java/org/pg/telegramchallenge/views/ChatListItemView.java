@@ -34,11 +34,11 @@ public class ChatListItemView extends View {
     private boolean mIsTyping = false;
     private String[] mAuthors = null;
 
-    public ChatStatus getStatus() {
+    public MessageStatus getStatus() {
         return mStatus;
     }
 
-    public enum ChatStatus {
+    public enum MessageStatus {
         DELIVERING, READ, UNREAD;
     }
 
@@ -74,7 +74,7 @@ public class ChatListItemView extends View {
     private Calendar mDate;
 
     private int unread = 0;
-    private ChatStatus mStatus = ChatStatus.READ;
+    private MessageStatus mStatus = MessageStatus.READ;
     private String avatarImageFilePath = null;
     ViewTarget<ChatListItemView, Bitmap> glideTarget;
 
@@ -284,7 +284,7 @@ public class ChatListItemView extends View {
             // drawable would be as height as text
             // bounds are NOT equal to textHeight!
             int timeTextRealHight = bounds.bottom - bounds.top;
-            int statusDrawableSize = timeTextRealHight / ((mStatus==ChatStatus.UNREAD)?2:1);
+            int statusDrawableSize = timeTextRealHight / ((mStatus== MessageStatus.UNREAD)?2:1);
 
             int textLeft, textTop, textRight, textBottom;
 
@@ -472,7 +472,7 @@ public class ChatListItemView extends View {
      * @param status
      *
      */
-    public void setStatus(ChatStatus status){
+    public void setStatus(MessageStatus status){
         mStatus = status;
         invalidate();
     }
