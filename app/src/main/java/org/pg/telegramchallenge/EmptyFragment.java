@@ -36,6 +36,7 @@ public class EmptyFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+
         View view = inflater.inflate(R.layout.fragment_empty, container, false);
 
         ChatListItemView itemView = (ChatListItemView) view.findViewById(R.id.sample_view);
