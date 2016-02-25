@@ -55,7 +55,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver, ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver{
+public class ChatListFragment extends Fragment implements ObserverApplication.OnErrorObserver, ObserverApplication.ChatsObserver, ObserverApplication.OnUpdateChatTitleObserver, ObserverApplication.OnUpdateChatOrderObserver, ObserverApplication.OnUpdateFileObserver, ObserverApplication.IsWaitingForPendingUpdates{
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -182,7 +182,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
                     }
                 }
 
-                Log.e("TAG_1", String.valueOf(totalItems-visibleItems));
                 if (!loading && totalItems - visibleItems <= firstVisibleItem + visibleThreshold) {
                     getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
 
@@ -204,9 +203,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         try {
             latch.await();
         } catch (InterruptedException e) {
-
         }
-//
+
 //        offsetChatId = 0;
 //        offsetOrder = 9223372036854775807L;
         getApplication().sendRequest(new TdApi.GetChats(offsetOrder, offsetChatId, limit));
@@ -256,6 +254,12 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.Chats obj) {
+//        for (TdApi.Chat chat : obj.chats) {
+//            if (chat.type instanceof TdApi.GroupChatInfo) {
+//                getApplication().sendRequest(new TdApi.GetGroupFull(((TdApi.GroupChatInfo)chat.type).group.id));
+//            }
+//        }
+
         int n = obj.chats.length;
         if (n != 0) {
 //            TODO: THIS OR

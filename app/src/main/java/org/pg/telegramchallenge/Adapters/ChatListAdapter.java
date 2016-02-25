@@ -38,7 +38,7 @@ import java.util.Observer;
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
         implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
         ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver,
-        ObserverApplication.OnUpdateNewMessageObserver {
+        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.IsWaitingForPendingUpdates {
 
     private static LinkedList<Long> chatList = new LinkedList<>();
     private static Map<Long, TdApi.Chat> chatMap = new HashMap<>();

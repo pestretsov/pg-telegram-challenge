@@ -27,8 +27,12 @@ import java.util.Stack;
 /**
  * Created by artemypestretsov on 2/18/16.
  */
-public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implements ObserverApplication.OnGetChatHistoryObserver {
-    private long chatId;
+public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnGetGroupFullObserver {
+    private static final String TAG = ChatAdapter.class.getSimpleName();
+
+    private Long chatId = null;
+    private TdApi.GroupFull groupFull = null;
+    private TdApi.Chat chat = null;
     private int lastPos = 0;
 
     private Context context;
@@ -37,14 +41,31 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     private LinkedList<TdApi.Message> messagesList = new LinkedList<>();
     private Map<Integer, TdApi.User> usersMap = new HashMap<>();
 
-    public ChatAdapter(Context context, Activity activity, long chatId, List<TdApi.User> users) {
-        this.chatId = chatId;
-
+    public ChatAdapter(Context context, Activity activity, TdApi.Chat chat) {
+        this.chatId = chat.id;
+        this.chat = chat;
         this.context = (ObserverApplication) context;
         this.activity = (MainActivity) activity;
 
-        for (TdApi.User user : users) {
-            usersMap.put(user.id, user);
+
+        if (chat.type instanceof TdApi.GroupChatInfo) {
+            // TODO: НУЖНО ГАРАНТИРОВАТЬ, ЧТО ГРУППА БУДЕТ В ХЭШМЭПЕ
+            // либо сделать обсервером ---- ТАК И ПОСТУПИМ=D
+            if (ObserverApplication.groupsFull.containsKey(((TdApi.GroupChatInfo) chat.type).group.id)) {
+                groupFull = ObserverApplication.groupsFull.get(((TdApi.GroupChatInfo) chat.type).group.id);
+
+                for (TdApi.ChatParticipant participant : groupFull.participants) {
+                    usersMap.put(participant.user.id, participant.user);
+                }
+            }
+        } else if (chat.type instanceof TdApi.ChannelChatInfo) {
+          // TODO: complete
+        } else {
+            // TODO: WHATS THE DIFFERENCE BETWEEN CHANNELS AND SO ON
+            chatId = chat.id;
+
+            usersMap.put(((TdApi.PrivateChatInfo)chat.type).user.id, ((TdApi.PrivateChatInfo)chat.type).user);
+            usersMap.put(ObserverApplication.userMe.id, ObserverApplication.userMe);
         }
     }
 
@@ -63,15 +84,23 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
 
         TdApi.Message msg = messagesList.get(position);
         TdApi.User usr = usersMap.get(msg.fromId);
+        if (usr == null && ObserverApplication.users.containsKey(msg.fromId)) {
+            usr = ObserverApplication.users.get(msg.fromId);
+        }
 
         holder.chatItemView.setBarVisability(false);
         holder.chatItemView.setDateVisability(false);
 
-        holder.chatItemView.setTitle(Utils.getFullName(usr.firstName, usr.lastName));
+
+        try {
+            holder.chatItemView.setTitle(Utils.getFullName(usr.firstName, usr.lastName));
+        } catch (NullPointerException e) {
+            Log.e("TAG", "shouldntBeThatBad");
+        }
 
         String text = "BOSS";
-        if (messagesList.get(position).content instanceof TdApi.MessageText && ((TdApi.MessageText) messagesList.get(position).content).text.length() > 0) {
-            text = ((TdApi.MessageText)messagesList.get(position).content).text;
+        if (msg.content instanceof TdApi.MessageText && ((TdApi.MessageText) msg.content).text.length() > 0) {
+            text = ((TdApi.MessageText)msg.content).text;
             holder.chatItemView.setText(text);
         } else {
             holder.chatItemView.setText(text);
@@ -95,6 +124,19 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     public void proceed(TdApi.UpdateNewMessage obj) {
         messagesList.addFirst(obj.message);
         this.notifyItemInserted(0);
+    }
+
+    @Override
+    public void proceed(TdApi.GroupFull obj) {
+        try {
+            groupFull = ObserverApplication.groupsFull.get(((TdApi.GroupChatInfo) chat.type).group.id);
+
+            for (TdApi.ChatParticipant participant : groupFull.participants) {
+                usersMap.put(participant.user.id, participant.user);
+            }
+        } catch (NullPointerException e) {
+            Log.e(TAG, e.toString());
+        }
     }
 
 

@@ -15,18 +15,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import org.drinkless.td.libcore.telegram.Client;
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.Adapters.ChatAdapter;
 import org.pg.telegramchallenge.utils.Utils;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ChatFragment extends Fragment implements ObserverApplication.ChatObserver, ObserverApplication.ConcreteChatObserver,  ObserverApplication.OnGetChatHistoryObserver {
+    final CountDownLatch latch = new CountDownLatch(1);
 
     private Toolbar toolbar;
     private RecyclerView chatRecyclerView;
@@ -36,20 +39,21 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
     private TdApi.Chat chat;
 
     private long chatId;
+    private int groupId = 0;
     private long myId;
 
     private boolean loading = true;
 
     // TODO: ROMAN - TRY DIFFERENT VISIBLE THRESHOLD AND OFFSET
-    private int totalItems, visibleThreshold = 20, firstVisible, totalVisible, previousTotal = 0;
+    private int totalItems, visibleThreshold = 30, firstVisible, totalVisible, previousTotal = 0;
     private int offset = 10;
 
 
     private int msgStartFromId = 0;
 
-    public void setChat(TdApi.Chat chat) {
-        this.chat = chat;
-    }
+//    public void setChat(TdApi.Chat chat) {
+//        this.chat = chat;
+//    }
 
     public ObserverApplication getApplication(){
         return (ObserverApplication) getActivity().getApplication();
@@ -60,7 +64,9 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
     public static ChatFragment newInstance(TdApi.Chat chat) {
         ChatFragment fragment = new ChatFragment();
-        fragment.setChat(chat);
+        Bundle args = new Bundle();
+        args.putLong("chatId", chat.id);
+        fragment.setArguments(args);
         return fragment;
     }
 
@@ -75,7 +81,9 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
         View view = inflater.inflate(R.layout.fragment_chat, container, false);
 
         myId = ObserverApplication.userMe.id;
-        chatId = chat.id;
+
+        chatId = getArguments().getLong("chatId");
+        chat = ObserverApplication.chats.get(chatId);
 
         Toast.makeText(getActivity(), String.valueOf(chatId), Toast.LENGTH_SHORT).show();
 
@@ -89,17 +97,29 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
         layoutManager.setReverseLayout(true);
         layoutManager.setStackFromEnd(false);
 
-        List<TdApi.User> users = new LinkedList<>();
-
         getApplication().sendRequest(new TdApi.OpenChat(chatId));
-        users.add(ObserverApplication.userMe);
-        if (chat.id < 0) {
-            getApplication().sendRequest(new TdApi.GetGroupFull(((TdApi.GroupChatInfo)chat.type).group.id));
-        } else {
-            users.add(((TdApi.PrivateChatInfo)chat.type).user);
+
+
+        if (chat.type instanceof TdApi.GroupChatInfo) {
+            groupId = ((TdApi.GroupChatInfo) chat.type).group.id;
+            if (!ObserverApplication.groupsFull.containsKey(groupId)) {
+                getApplication().sendRequest(new TdApi.GetGroupFull(groupId), new Client.ResultHandler() {
+                    @Override
+                    public void onResult(TdApi.TLObject object) {
+                        if (object instanceof TdApi.GroupFull) {
+                            ObserverApplication.groupsFull.put(groupId, ((TdApi.GroupFull) object));
+                            latch.countDown();
+                        }
+                    }
+                });
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                }
+            }
         }
 
-        chatAdapter = new ChatAdapter(getApplication(), getActivity(), chatId, users);
+        chatAdapter = new ChatAdapter(getApplication(), getActivity(), chat);
         chatRecyclerView = (RecyclerView) view.findViewById(R.id.chat_recycler_view);
         layoutManager.supportsPredictiveItemAnimations();
         chatRecyclerView.setLayoutManager(layoutManager);
@@ -126,20 +146,12 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
                     loading = true;
                 }
-
-                Log.e("TAG_1", String.valueOf(layoutManager.findFirstVisibleItemPosition()));
-                Log.e("TAG_2", String.valueOf(layoutManager.findLastVisibleItemPosition()));
-                Log.e("TAG_3", String.valueOf(layoutManager.getChildCount()));
-                Log.e("TAG_4", String.valueOf(layoutManager.getItemCount()));
-                Log.e("TAG_5", String.valueOf(chatRecyclerView.getChildCount()));
             }
         });
 
         chatRecyclerView.setAdapter(chatAdapter);
 
-//        getApplication().sendRequest(new TdApi.GetChat(chatId));
-
-        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 30));
+        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
 
         return view;
     }
@@ -182,6 +194,9 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
     @Override
     public void proceed(TdApi.Messages obj) {
-        msgStartFromId = obj.messages[obj.totalCount-1].id;
+
+        if (obj.totalCount > 0) {
+            msgStartFromId = obj.messages[obj.totalCount - 1].id;
+        }
     }
 }
