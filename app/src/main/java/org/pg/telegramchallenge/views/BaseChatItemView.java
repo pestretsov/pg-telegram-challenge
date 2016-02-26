@@ -125,7 +125,6 @@ public class BaseChatItemView extends View {
 //        mBarMessageTextPaint.setFakeBoldText(true);
         mBarMessageTextPaint.setTypeface(mBoldTypeface);
 
-        int padding = dpToPx(VERTICAL_PADDING_DP, getContext());
         mBarHeight = (int)mBarMessageTextSize*2;
         mDatePlaceholderHeight = (int)mDateTextHeight*2;
     }
@@ -178,6 +177,14 @@ public class BaseChatItemView extends View {
         mDateVisibility = isShown;
         invalidate();
         requestLayout();
+    }
+
+    public void setDate (Calendar c) {
+        mDate = c;
+        if (!mDateVisibility) {
+            return;
+        }
+        invalidate();
     }
 
     public void setBarVisability(boolean isShown) {
