@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
@@ -36,30 +37,25 @@ public class BaseUserMessageView extends BaseChatItemView {
     private Drawable mAvatarDrawable = null;
 
     protected boolean mDetailsVisibility = true;
-    private boolean mTimeIsVisible = true;
 
     private Paint mAvatarCirclePaint;
     private TextPaint mInitialsTextPaint;
     private int mAvatarColor = Color.BLUE;
 
-    public void setTitle(String mTitleText) {
-        this.mTitleText = mTitleText;
-    }
-
-    private String mTitleText;
+    private String mFirstName, mSecondName;
 
     private TextPaint mTitleTextPaint;
+
     private TextPaint mTimeTextPaint;
-
     private float mTitleTextSize;
+
     private float mTimeTextSize;
-
     private int mTitleTextColor;
+
     private int mTimeTextColor;
-
     private String mAvatarImageFilePath;
-    private ChatListItemView.MessageStatus mStatus = ChatListItemView.MessageStatus.UNREAD;
 
+    private ChatListItemView.MessageStatus mStatus = ChatListItemView.MessageStatus.UNREAD;
     private static Drawable clockIcon, badgeIcon;
     private static int badgeColor;
 
@@ -86,7 +82,7 @@ public class BaseUserMessageView extends BaseChatItemView {
         invalidate();
     }
 
-    ViewTarget<BaseUserMessageView, Bitmap> glideTarget = new ViewTarget<BaseUserMessageView, Bitmap>(this) {
+    private ViewTarget<BaseUserMessageView, Bitmap> glideTarget = new ViewTarget<BaseUserMessageView, Bitmap>(this) {
         @Override
         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
             RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
@@ -103,7 +99,9 @@ public class BaseUserMessageView extends BaseChatItemView {
         TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.BaseUserMessageView);
 
         try {
-            mTitleText = getOrElse(attributes.getString(R.styleable.BaseUserMessageView_titleText), "");
+            setTitle(getOrElse(attributes.getString(R.styleable.BaseUserMessageView_titleText), ""),
+                        "",
+                        false);
 
             mTitleTextSize = attributes.getDimension(R.styleable.BaseUserMessageView_titleTextSize, 0f);
             mTimeTextSize = attributes.getDimension(R.styleable.BaseUserMessageView_timeTextSize, 0f);
@@ -171,7 +169,7 @@ public class BaseUserMessageView extends BaseChatItemView {
         final int right = getWidth() - getPaddingRight();
         final int bottom = getHeight() - getPaddingBottom();
 
-        String initials = getInitials(mTitleText);
+        String initials = initialsBuilder.toString().toUpperCase();
         int avatarImageRadius = dpToPx(dpAvatarRadius, c);
         if (mDetailsVisibility) {
             if (mAvatarDrawable == null) {
@@ -220,7 +218,7 @@ public class BaseUserMessageView extends BaseChatItemView {
                     - (iconRadius==0?0:((int)(iconRadius*2) + holdersPadding))
                     - (timeLength + holdersPadding) - titleStartX;
 
-            String adjustedTitle = adjustString(mTitleText, titleMaxLength, mTitleTextPaint);
+            String adjustedTitle = adjustString(mFirstName, titleMaxLength, mTitleTextPaint);
             canvas.drawText(adjustedTitle, titleStartX, titleStartY, mTitleTextPaint);
 
             int timeStartY = (int) (top + mTitleTextSize); // to align them
@@ -243,6 +241,32 @@ public class BaseUserMessageView extends BaseChatItemView {
                 .asBitmap()
                 .fitCenter()
                 .into(glideTarget);
+    }
+
+    private StringBuilder initialsBuilder = new StringBuilder();
+    public void setTitle(@NonNull String firstName, @Nullable String secondName) {
+        setTitle(firstName, secondName, true);
+    }
+    private void setTitle(@NonNull String firstName, @Nullable String secondName, boolean toInvalidate) {
+        if (firstName == null) {
+            throw new IllegalArgumentException("firstName cannot be null!");
+        }
+
+        initialsBuilder.setLength(0);
+        mFirstName = firstName;
+        if (!mFirstName.isEmpty()) {
+            initialsBuilder.append(mFirstName.charAt(0));
+        }
+        if (secondName == null || secondName.isEmpty()) {
+            if (mFirstName.length()>=2)
+                initialsBuilder.append(mFirstName.charAt(1));
+        } else {
+            initialsBuilder.append(secondName.charAt(0));
+        }
+        mSecondName = secondName;
+
+        if (toInvalidate)
+            invalidate();
     }
 
     public void setStatus(ChatListItemView.MessageStatus status) {

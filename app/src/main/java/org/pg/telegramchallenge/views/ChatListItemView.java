@@ -76,7 +76,7 @@ public class ChatListItemView extends View {
     private int unread = 0;
     private MessageStatus mStatus = MessageStatus.READ;
     private String avatarImageFilePath = null;
-    ViewTarget<ChatListItemView, Bitmap> glideTarget;
+    private ViewTarget<ChatListItemView, Bitmap> glideTarget;
 
     private static Drawable clockIcon, bageIcon, groupIcon;
     private Drawable avatarDrawable = null;
