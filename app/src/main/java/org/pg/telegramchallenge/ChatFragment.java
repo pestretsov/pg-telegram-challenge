@@ -2,6 +2,7 @@ package org.pg.telegramchallenge;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
@@ -29,7 +30,7 @@ import java.util.concurrent.CountDownLatch;
  * A simple {@link Fragment} subclass.
  */
 public class ChatFragment extends Fragment implements ObserverApplication.ChatObserver, ObserverApplication.ConcreteChatObserver,  ObserverApplication.OnGetChatHistoryObserver {
-    final CountDownLatch latch = new CountDownLatch(1);
+//    final CountDownLatch latch = new CountDownLatch(1);
 
     private Toolbar toolbar;
     private RecyclerView chatRecyclerView;
@@ -99,31 +100,12 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
         getApplication().sendRequest(new TdApi.OpenChat(chatId));
 
-
-        if (chat.type instanceof TdApi.GroupChatInfo) {
-            groupId = ((TdApi.GroupChatInfo) chat.type).group.id;
-            if (!ObserverApplication.groupsFull.containsKey(groupId)) {
-                getApplication().sendRequest(new TdApi.GetGroupFull(groupId), new Client.ResultHandler() {
-                    @Override
-                    public void onResult(TdApi.TLObject object) {
-                        if (object instanceof TdApi.GroupFull) {
-                            ObserverApplication.groupsFull.put(groupId, ((TdApi.GroupFull) object));
-                            latch.countDown();
-                        }
-                    }
-                });
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                }
-            }
-        }
-
-        chatAdapter = new ChatAdapter(getApplication(), getActivity(), chat);
         chatRecyclerView = (RecyclerView) view.findViewById(R.id.chat_recycler_view);
         layoutManager.supportsPredictiveItemAnimations();
         chatRecyclerView.setLayoutManager(layoutManager);
         chatRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        chatAdapter = new ChatAdapter(getApplication(), getActivity(), chat);
+        chatRecyclerView.setAdapter(chatAdapter);
 
         chatRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -148,10 +130,16 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
                 }
             }
         });
-
-        chatRecyclerView.setAdapter(chatAdapter);
-
-        getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
+        if (chat.type instanceof TdApi.GroupChatInfo) {
+            groupId = ((TdApi.GroupChatInfo) chat.type).group.id;
+            if (!ObserverApplication.groupsFull.containsKey(groupId)) {
+                new FetchGroupFull().execute(groupId);
+            } else {
+                getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
+            }
+        } else {
+            getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
+        }
 
         return view;
     }
@@ -197,6 +185,39 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
         if (obj.totalCount > 0) {
             msgStartFromId = obj.messages[obj.totalCount - 1].id;
+        }
+    }
+
+    private class FetchGroupFull extends AsyncTask<Integer, Void, Integer> implements Client.ResultHandler{
+        CountDownLatch latch = new CountDownLatch(1);
+        @Override
+        protected Integer doInBackground(Integer... params) {
+            getApplication().sendRequest(new TdApi.GetGroupFull(groupId), this);
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        //TODO: add spinner
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+
+            getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
+
+            chatAdapter.notifyDataSetChanged();
+        }
+
+        @Override
+        public void onResult(TdApi.TLObject object) {
+            ObserverApplication.groupsFull.put(((TdApi.GroupFull) object).group.id, (TdApi.GroupFull) object);
+            for (TdApi.ChatParticipant participant : ((TdApi.GroupFull) object).participants) {
+                ObserverApplication.users.put(participant.user.id, participant.user);
+            }
+            latch.countDown();
         }
     }
 }

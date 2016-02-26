@@ -186,22 +186,22 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         holder.chatListItemView.setTitle(title);
 
         if (currentChat.topMessage.fromId != ObserverApplication.userMe.id){
-            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+            holder.chatListItemView.setStatus(ChatListItemView.MessageStatus.READ);
         }
         else if (currentChat.lastReadOutboxMessageId < currentChat.topMessage.id) {
-            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.UNREAD);
+            holder.chatListItemView.setStatus(ChatListItemView.MessageStatus.UNREAD);
         } else {
-            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+            holder.chatListItemView.setStatus(ChatListItemView.MessageStatus.READ);
         }
 
         if (currentChat.topMessage.sendState instanceof TdApi.MessageIsBeingSent) {
-            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.DELIVERING);
+            holder.chatListItemView.setStatus(ChatListItemView.MessageStatus.DELIVERING);
         } else if (currentChat.topMessage.sendState instanceof TdApi.MessageIsFailedToSend) {
             holder.chatListItemView.setUnreadCount(-1);
         }
 
         if (currentChat.id == ObserverApplication.userMe.id) {
-            holder.chatListItemView.setStatus(ChatListItemView.ChatStatus.READ);
+            holder.chatListItemView.setStatus(ChatListItemView.MessageStatus.READ);
         }
 
 

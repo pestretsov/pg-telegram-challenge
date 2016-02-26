@@ -83,14 +83,15 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
         }
 
         TdApi.Message msg = messagesList.get(position);
-        TdApi.User usr = usersMap.get(msg.fromId);
-        if (usr == null && ObserverApplication.users.containsKey(msg.fromId)) {
-            usr = ObserverApplication.users.get(msg.fromId);
-        }
+        TdApi.User usr = ObserverApplication.users.get(msg.fromId);
+//        if (usr == null && ObserverApplication.users.containsKey(msg.fromId)) {
+//            usr = ObserverApplication.users.get(msg.fromId);
+//        }
 
         holder.chatItemView.setBarVisability(false);
         holder.chatItemView.setDateVisability(false);
 
+//        holder.chatItemView.setStatus(ChatListItemView.MessageStatus.READ);
 
         try {
             holder.chatItemView.setTitle(Utils.getFullName(usr.firstName, usr.lastName));

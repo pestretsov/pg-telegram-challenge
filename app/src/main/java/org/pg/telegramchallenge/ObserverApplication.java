@@ -495,6 +495,9 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
             if (object instanceof TdApi.GroupFull) {
                 groupsFull.put(((TdApi.GroupFull) object).group.id, (TdApi.GroupFull) object);
+                for (TdApi.ChatParticipant participant : ((TdApi.GroupFull) object).participants) {
+                    users.put(participant.user.id, participant.user);
+                }
 
                 for (OnGetGroupFullObserver observer : onGetGroupFullObservers) {
                     observer.proceed((TdApi.GroupFull) object);
