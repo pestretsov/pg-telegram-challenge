@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by roman on 22.10.15.
@@ -34,7 +35,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
     // CACHE
     public static Map<Integer, TdApi.User> users = new HashMap<>();
     public static Map<Integer, TdApi.GroupFull> groupsFull = new HashMap<>();
-    public static Map<Long, TdApi.Chat> chats = new HashMap<>();
+    public static Map<Long, TdApi.Chat> chats = new ConcurrentHashMap<>();
 
     // NEVER MISS UPDATES
     private static LinkedList<TdApi.UpdateNewMessage> pendingUpdateNewMessage = new LinkedList<>();
@@ -89,8 +90,6 @@ public class ObserverApplication extends Application implements Client.ResultHan
     private volatile List<ConcreteChatObserver> concreteChatObservers = new LinkedList<>();
     private volatile List<OnGetChatHistoryObserver> onGetChatHistoryObservers = new LinkedList<>();
     private volatile List<OnGetGroupFullObserver> onGetGroupFullObservers = new LinkedList<>();
-
-
 
     // INTERFACES
     public interface IsWaitingForPendingUpdates {
@@ -355,6 +354,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 }
 
                 if (object instanceof TdApi.UpdateNewMessage) {
+                    sendRequest(new TdApi.GetChat(((TdApi.UpdateNewMessage) object).message.chatId));
                     if (onUpdateNewMessageObservers.size() == 0) {
                         pendingUpdateNewMessage.addLast((TdApi.UpdateNewMessage) object);
                     }
@@ -373,6 +373,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 }
 
                 if (object instanceof TdApi.UpdateChatReadInbox) {
+                    sendRequest(new TdApi.GetChat(((TdApi.UpdateChatReadInbox) object).chatId));
                     if (onUpdateChatReadInboxObservers.size() == 0) {
                         pendingUpdateChatReadInbox.addLast((TdApi.UpdateChatReadInbox) object);
                     }
@@ -403,6 +404,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 }
 
                 if (object instanceof TdApi.UpdateChatTitle) {
+                    sendRequest(new TdApi.GetChat(((TdApi.UpdateChatTitle) object).chatId));
                     if (onUpdateChatTitleObservers.size() == 0) {
                         pendingUpdateChatTitle.addLast((TdApi.UpdateChatTitle) object);
                     }
@@ -421,6 +423,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 }
 
                 if (object instanceof TdApi.UpdateChatPhoto) {
+                    sendRequest(new TdApi.GetChat(((TdApi.UpdateChatPhoto) object).chatId));
                     for (OnUpdateChatPhotoObserver observer : onUpdateChatPhotoObservers) {
                         observer.proceed((TdApi.UpdateChatPhoto) object);
                     }
@@ -466,6 +469,9 @@ public class ObserverApplication extends Application implements Client.ResultHan
             if (object instanceof TdApi.Chats) {
                 for (TdApi.Chat chat : ((TdApi.Chats) object).chats) {
                     chats.put(chat.id, chat);
+                    if (chat.type instanceof TdApi.PrivateChatInfo) {
+                        users.put(((TdApi.PrivateChatInfo) chat.type).user.id, ((TdApi.PrivateChatInfo) chat.type).user);
+                    }
                 }
 
                 if (!isReadyForUpdates) {

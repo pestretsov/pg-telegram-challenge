@@ -36,12 +36,14 @@ import java.util.Observer;
  * Created by artemypestretsov on 1/4/16.
  */
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatListVH>
-        implements ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver,
+        implements ObserverApplication.OnUpdateFileObserver,
         ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateChatReadInboxObserver, ObserverApplication.OnUpdateUserActionObserver,
-        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.IsWaitingForPendingUpdates {
+        ObserverApplication.OnUpdateNewMessageObserver, ObserverApplication.ChatObserver,
+
+     ObserverApplication.IsWaitingForPendingUpdates {
 
     private static LinkedList<Long> chatList = new LinkedList<>();
-    private static Map<Long, TdApi.Chat> chatMap = new HashMap<>();
+    private Map<Long, TdApi.Chat> chatMap;
 
     private ObserverApplication context;
     private MainActivity activity;
@@ -54,6 +56,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         this.context = (ObserverApplication) context;
         this.activity = (MainActivity) activity;
 
+        this.chatMap = ObserverApplication.chats;
         if (chatList.size() != 0) {
             this.notifyDataSetChanged();
         }
@@ -106,30 +109,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
         }
         this.notifyItemChanged(chatList.indexOf(title.chatId));
     }
-
-    public void updateData(TdApi.Chat chat) {
-
-        if (chatMap.containsKey(chat.id)) {
-            // rearrange items in list
-            int position = chatList.indexOf(chat.id);
-            if (position == 0) {
-                chatMap.put(chat.id, chat);
-                this.notifyItemChanged(0);
-            } else {
-                chatList.remove(position);
-                chatList.addFirst(chat.id);
-
-                chatMap.put(chat.id, chat);
-                this.notifyItemRangeChanged(0, position+1);
-            }
-        } else {
-            // add new Chat
-            chatList.add(0, chat.id);
-            chatMap.put(chat.id, chat);
-            this.notifyItemInserted(0);
-        }
-    }
-
     /**
      *
      * @param holder to load avatar into
@@ -231,7 +210,13 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
 
     @Override
     public void proceed(TdApi.Chat obj) {
-        updateData(obj);
+        int pos = chatList.indexOf(obj.id);
+        if (pos == -1) {
+            chatList.add(0, obj.id);
+            this.notifyItemInserted(0);
+        } else {
+            this.notifyItemChanged(pos);
+        }
     }
 
     @Override
@@ -255,36 +240,21 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatLi
     // TODO: complete
     @Override
     public void proceed(TdApi.UpdateUserAction obj) {
-        if (obj.action instanceof TdApi.SendMessageTypingAction) {
-//            if (ObserverApplication.userMe != null && obj.chatId == ObserverApplication.userMe.id) {
-//                chatMap.get(obj.chatId).lastReadOutboxMessageId = chatMap.get(obj.chatId).topMessage.id;
-//                chatMap.get(obj.chatId).lastReadInboxMessageId = chatMap.get(obj.chatId).topMessage.id;
-//                chatMap.get(obj.chatId).unreadCount = 0;
-//                this.notifyItemChanged(chatList.indexOf(obj.chatId));
-//            }
 
-        }
     }
 
     @Override
     public void proceed(TdApi.UpdateNewMessage obj) {
-        TdApi.Message msg = obj.message;
-        if (chatMap.containsKey(msg.chatId)) {
-            TdApi.Chat chat = chatMap.get(msg.chatId);
-
-            chat.topMessage = msg;
-
-            if (msg.sendState instanceof TdApi.MessageIsIncoming) {
-                chat.unreadCount += 1;
-            } else {
-                chat.unreadCount = 0;
-            }
-            updateData(chat);
+        int pos = chatList.indexOf(obj.message.chatId);
+        if (pos == -1) {
+            chatList.addFirst(obj.message.chatId);
+            this.notifyItemInserted(0);
+        } else if (pos == 0) {
+            this.notifyItemChanged(0);
         } else {
-//            chatMap.put(message.chatId, null);
-
-//            chatList.add(message.chatId);
-            getApplication().sendRequest(new TdApi.GetChat(msg.chatId));
+            chatList.remove(pos);
+            chatList.addFirst(obj.message.chatId);
+            this.notifyItemRangeChanged(0, pos+1);
         }
     }
 

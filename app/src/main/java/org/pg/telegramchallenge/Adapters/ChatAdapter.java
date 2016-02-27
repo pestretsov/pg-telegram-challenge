@@ -18,6 +18,8 @@ import org.pg.telegramchallenge.views.TextUserMessageView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,7 +29,7 @@ import java.util.Stack;
 /**
  * Created by artemypestretsov on 2/18/16.
  */
-public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnGetGroupFullObserver {
+public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnUpdateChatReadOutboxObserver {//, ObserverApplication.OnGetGroupFullObserver {
     private static final String TAG = ChatAdapter.class.getSimpleName();
 
     private Long chatId = null;
@@ -39,14 +41,14 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     private MainActivity activity;
 
     private LinkedList<TdApi.Message> messagesList = new LinkedList<>();
-    private Map<Integer, TdApi.User> usersMap = new HashMap<>();
+//    private Map<Integer, TdApi.User> usersMap = new HashMap<>();
 
-    public ChatAdapter(Context context, Activity activity, TdApi.Chat chat) {
-        this.chatId = chat.id;
-        this.chat = chat;
+    public ChatAdapter(Context context, Activity activity, long id) {
+        this.chatId = id;
         this.context = (ObserverApplication) context;
         this.activity = (MainActivity) activity;
 
+        this.chat = ObserverApplication.chats.get(chatId);
 
         if (chat.type instanceof TdApi.GroupChatInfo) {
             // TODO: НУЖНО ГАРАНТИРОВАТЬ, ЧТО ГРУППА БУДЕТ В ХЭШМЭПЕ
@@ -54,9 +56,9 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
             if (ObserverApplication.groupsFull.containsKey(((TdApi.GroupChatInfo) chat.type).group.id)) {
                 groupFull = ObserverApplication.groupsFull.get(((TdApi.GroupChatInfo) chat.type).group.id);
 
-                for (TdApi.ChatParticipant participant : groupFull.participants) {
-                    usersMap.put(participant.user.id, participant.user);
-                }
+//                for (TdApi.ChatParticipant participant : groupFull.participants) {
+//                    usersMap.put(participant.user.id, participant.user);
+//                }
             }
         } else if (chat.type instanceof TdApi.ChannelChatInfo) {
           // TODO: complete
@@ -64,8 +66,8 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
             // TODO: WHATS THE DIFFERENCE BETWEEN CHANNELS AND SO ON
             chatId = chat.id;
 
-            usersMap.put(((TdApi.PrivateChatInfo)chat.type).user.id, ((TdApi.PrivateChatInfo)chat.type).user);
-            usersMap.put(ObserverApplication.userMe.id, ObserverApplication.userMe);
+//            usersMap.put(((TdApi.PrivateChatInfo)chat.type).user.id, ((TdApi.PrivateChatInfo)chat.type).user);
+//            usersMap.put(ObserverApplication.userMe.id, ObserverApplication.userMe);
         }
     }
 
@@ -83,18 +85,57 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
         }
 
         TdApi.Message msg = messagesList.get(position);
+        TdApi.Message msgPrev = null;
+
         TdApi.User usr = ObserverApplication.users.get(msg.fromId);
-//        if (usr == null && ObserverApplication.users.containsKey(msg.fromId)) {
-//            usr = ObserverApplication.users.get(msg.fromId);
-//        }
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date(Utils.timestampToMillis(msg.date)));
+        Calendar calPrev = null;
+
+        boolean sameDay = false;
+        // just for fun
+        long dt = 100_000_000_000L;
+
+        if (position < messagesList.size()-1) {
+            msgPrev = messagesList.get(position+1);
+            calPrev = Calendar.getInstance();
+            calPrev.setTime(new Date(Utils.timestampToMillis(msgPrev.date)));
+            sameDay = cal.get(Calendar.YEAR) == calPrev.get(Calendar.YEAR) &&
+                    cal.get(Calendar.DAY_OF_YEAR) == calPrev.get(Calendar.DAY_OF_YEAR);
+
+            if (sameDay) {
+                // millis - to seconds - to minutes
+                dt = (cal.getTimeInMillis()/1000)/60 - (calPrev.getTimeInMillis()/1000)/60;
+            }
+        }
+
+        holder.chatItemView.setDate(cal);
+
+        if (msgPrev != null && msgPrev.fromId == msg.fromId && dt <= 5) {
+            holder.chatItemView.setDetailsVisibility(false);
+        } else {
+            holder.chatItemView.setDetailsVisibility(true);
+        }
+
+        if (sameDay) {
+            holder.chatItemView.setDateVisability(false);
+        } else {
+            holder.chatItemView.setDateVisability(true);
+            holder.chatItemView.setDetailsVisibility(true);
+        }
 
         holder.chatItemView.setBarVisability(false);
-        holder.chatItemView.setDateVisability(false);
 
-//        holder.chatItemView.setStatus(ChatListItemView.MessageStatus.READ);
+
+
+        holder.chatItemView.setStatus(ChatListItemView.MessageStatus.READ);
+        if (!(msg.sendState instanceof TdApi.MessageIsIncoming) && msg.id > chat.lastReadOutboxMessageId) {
+            holder.chatItemView.setStatus(ChatListItemView.MessageStatus.UNREAD);
+        }
 
         try {
-            holder.chatItemView.setTitle(Utils.getFullName(usr.firstName, usr.lastName));
+            holder.chatItemView.setTitle(usr.firstName, usr.lastName);
         } catch (NullPointerException e) {
             Log.e("TAG", "shouldntBeThatBad");
         }
@@ -107,7 +148,6 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
             holder.chatItemView.setText(text);
         }
     }
-
 
     @Override
     public int getItemCount() {
@@ -128,17 +168,23 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     }
 
     @Override
-    public void proceed(TdApi.GroupFull obj) {
-        try {
-            groupFull = ObserverApplication.groupsFull.get(((TdApi.GroupChatInfo) chat.type).group.id);
-
-            for (TdApi.ChatParticipant participant : groupFull.participants) {
-                usersMap.put(participant.user.id, participant.user);
-            }
-        } catch (NullPointerException e) {
-            Log.e(TAG, e.toString());
-        }
+    public void proceed(TdApi.UpdateChatReadOutbox obj) {
+        chat = ObserverApplication.chats.get(chatId);
+        this.notifyDataSetChanged();
     }
+
+//    @Override
+//    public void proceed(TdApi.GroupFull obj) {
+//        try {
+//            groupFull = ObserverApplication.groupsFull.get(((TdApi.GroupChatInfo) chat.type).group.id);
+//
+//            for (TdApi.ChatParticipant participant : groupFull.participants) {
+//                usersMap.put(participant.user.id, participant.user);
+//            }
+//        } catch (NullPointerException e) {
+//            Log.e(TAG, e.toString());
+//        }
+//    }
 
 
     public class ChatVH extends RecyclerView.ViewHolder {

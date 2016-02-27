@@ -74,10 +74,10 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private String avatarImageFilePath = null;
 
     // TODO: set 25 (20)
-    private int visibleThreshold = 25;
+    private int visibleThreshold = 5;
     private boolean loading = true;
     // TODO: set 50
-    private int limit = 50;
+    private int limit = 20;
     private long offsetChatId = 0;
     // объяснение магических чисел
     // https://vk.com/board55882680?act=search&q=offsetOrder
@@ -195,6 +195,7 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
             public void onResult(TdApi.TLObject object) {
                 if (object instanceof TdApi.User) {
                     ObserverApplication.userMe = (TdApi.User)object;
+                    ObserverApplication.users.put(((TdApi.User) object).id, (TdApi.User) object);
                     latch.countDown();
                 }
             }

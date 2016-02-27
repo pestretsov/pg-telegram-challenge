@@ -104,7 +104,7 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
         layoutManager.supportsPredictiveItemAnimations();
         chatRecyclerView.setLayoutManager(layoutManager);
         chatRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        chatAdapter = new ChatAdapter(getApplication(), getActivity(), chat);
+        chatAdapter = new ChatAdapter(getApplication(), getActivity(), chat.id);
         chatRecyclerView.setAdapter(chatAdapter);
 
         chatRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
