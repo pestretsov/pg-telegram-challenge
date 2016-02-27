@@ -40,17 +40,21 @@ public class ImageUserMessageView extends BaseUserMessageView {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        final Context context = getContext();
-        int avatarDiameter = Utils.dpToPx(dpAvatarRadius, context)*2;
-        int textPadding = Utils.dpToPx(this.mTextPadding, context);
+        final Context c = getContext();
+        int avatarDiameter = Utils.dpToPx(dpAvatarRadius, c)*2;
+        int textPadding = Utils.dpToPx(this.mTextPadding, c);
 
-        float width = getMeasuredWidth() - (getPaddingLeft() + getPaddingRight());
+        int width = getMeasuredWidth() - (getPaddingLeft() + getPaddingRight());
         int heightWithPadding = getMeasuredHeight();
         int adjustedImageHeight;
-        if ((mImageWidth <= width-(avatarDiameter + textPadding))) {
+        int maxImageWidth = width
+                - dpToPx(dpAvatarRadius*2, c)
+                - dpToPx(mTextPadding, c)*2 // *2 because same padding between status icon and text
+                - clockIcon.getIntrinsicWidth();
+        if (mImageWidth <= maxImageWidth) {
             adjustedImageHeight = mImageHeight;
         } else {
-            adjustedImageHeight = (int) (mImageHeight * width/mImageHeight);
+            adjustedImageHeight = (int) (mImageHeight * (float)maxImageWidth/mImageWidth);
         }
 //
         if (mDetailsVisibility) {
@@ -83,8 +87,13 @@ public class ImageUserMessageView extends BaseUserMessageView {
 
         int imageLeft = right + avatarDiameter + textPadding;
         int imageRight;
-        if (mImageWidth>(getWidth() - getPaddingLeft()) - imageLeft) {
-            imageRight = getWidth() - getPaddingLeft();
+        int maxImageWidth = getWidth()
+                - getPaddingLeft() - getPaddingRight()
+                - textPadding*2
+                - clockIcon.getIntrinsicWidth()
+                - avatarDiameter;
+        if (mImageWidth>maxImageWidth) {
+            imageRight = imageLeft + maxImageWidth;
         } else {
             imageRight = imageLeft + mImageWidth;
         }
