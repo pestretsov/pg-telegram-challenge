@@ -15,16 +15,14 @@
         android:text="Sample text, lorem ipsum"
         android:padding="16dp"
     />
-    <org.pg.telegramchallenge.views.ChatListItemView
-            style="@style/ChatListItemTextStyle"
-            android:id="@+id/sample_view_2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            auto:titleText="Artemy Pestretsov"
-            android:text="mister president, are you fucking kidding me?"
-            android:padding="16dp"
-            android:layout_below="@+id/message" android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"/>
+    <org.pg.telegramchallenge.views.ImageUserMessageView
+        android:id="@+id/sample_view_2"
+        android:padding="16dp"
+        android:layout_below="@+id/sample_view"
+        style="@style/BaseUserMessageViewStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        auto:titleText="Имаж бля"/>
 
 
     <org.pg.telegramchallenge.views.TextUserMessageView
@@ -35,7 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/message"
-            android:layout_below="@+id/sample_view"
+            android:layout_below="@+id/sample_view_2"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"/>
 </RelativeLayout>

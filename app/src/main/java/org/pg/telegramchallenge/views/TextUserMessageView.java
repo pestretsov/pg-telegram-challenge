@@ -75,7 +75,10 @@ public class TextUserMessageView extends BaseUserMessageView {
         int width = getMeasuredWidth();
 
         int widthWithoutPadding = width - getPaddingRight() - getPaddingLeft();
-        int textWidth = widthWithoutPadding - dpToPx(dpAvatarRadius*2, c) - dpToPx(mTextPadding, c);
+        int textWidth = widthWithoutPadding
+                - dpToPx(dpAvatarRadius*2, c)
+                - dpToPx(mTextPadding, c)*2 // *2 because same padding between status icon and text
+                - clockIcon.getIntrinsicWidth();
 
         if (mTextLayout == null) { // i guess it would be fine for recycler view
             mTextLayout = new DynamicLayout(mText, mTextPaint, textWidth, Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
@@ -93,6 +96,14 @@ public class TextUserMessageView extends BaseUserMessageView {
 
         mLinkForegroundSpan = new ForegroundColorSpan(mLinkColor);
         setText(mText, false);
+    }
+
+    @Override
+    protected int getStatusCenterY() {
+        if (mDetailsVisibility)
+            return super.getStatusCenterY();
+
+        return (int)(mTextSize + (mTextPaint.ascent() + mTextPaint.descent())/2);
     }
 
     @Override
