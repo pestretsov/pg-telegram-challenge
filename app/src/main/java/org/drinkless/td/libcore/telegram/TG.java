@@ -28,6 +28,8 @@ public final class TG {
     private static volatile Client instance;
     private static volatile String dir;
     private static volatile String filesDir;
+    private static volatile boolean enableFileLog = false;
+    private static volatile boolean useTestDc = false;
 
     /**
      * Sets handler which will be invoked for every incoming update from TDLib of type TdApi.Update.
@@ -45,7 +47,7 @@ public final class TG {
     }
 
     /**
-     * Sets directory for storing persistent data of TDLib.
+     * Sets directory for storing persistent data of TDLib. Defaults to the current working directory.
      * Must be called before getClientInstance().
      *
      * @param dir Directory to store persistent data.
@@ -57,7 +59,7 @@ public final class TG {
     }
 
     /**
-     * Sets directory for storing files of TDLib.
+     * Sets directory for storing files of TDLib. Defaults to directory set via {@link #setDir(String)}
      * Must be called before getClientInstance().
      *
      * @param dir Directory to store files.
@@ -68,9 +70,34 @@ public final class TG {
         }
     }
 
+    /**
+     * Enables/disables logging to a file in addition to logging to Android Log.
+     * By default logging to the file is disabled.
+     * Must be called before getClientInstance().
+     *
+     * @param is_enabled Directory to store files.
+     */
+    public static void setFileLogEnabled(boolean is_enabled) {
+        synchronized (TG.class) {
+            TG.enableFileLog = is_enabled;
+        }
+    }
 
     /**
-     * This function stops and destroys Client.
+     * Enables/disables logging to a file in addition to logging to Android Log.
+     * By default logging to the file is disabled.
+     * Must be called before getClientInstance().
+     *
+     * @param use_test_dc Directory to store files.
+     */
+    public static void setUseTestDc(boolean use_test_dc) {
+        synchronized (TG.class) {
+            TG.useTestDc = use_test_dc;
+        }
+    }
+
+    /**
+     * This function stops and destroys the Client.
      * No queries are possible after this call, but completely new instance
      * of a Client with different settings can be obtained through getClientInstance()
      */
@@ -88,8 +115,31 @@ public final class TG {
     }
 
     /**
+     * Changes TDLib log verbosity.
+     *
+     * @param newLogVerbosity New value of log verbosity. Must be positive.
+     *                        Value 0 corresponds to android.util.Log.ASSERT,
+     *                        value 1 corresponds to android.util.Log.ERROR,
+     *                        value 2 corresponds to android.util.Log.WARNING,
+     *                        value 3 corresponds to android.util.Log.INFO,
+     *                        value 4 corresponds to android.util.Log.DEBUG,
+     *                        value 5 corresponds to android.util.Log.VERBOSE,
+     *                        value greater than 5 can be used to enable even more logging.
+     *                        Default value of the log verbosity is 5.
+     * @throws IllegalArgumentException if newLogVerbosity is negative.
+     */
+    public static void setLogVerbosity(int newLogVerbosity) {
+        if (newLogVerbosity < 0) {
+            throw new IllegalArgumentException();
+        }
+        synchronized (TG.class) {
+            NativeClient.setLogVerbosity(newLogVerbosity);
+        }
+    }
+
+    /**
      * This function returns singleton object of class Client which can be used for querying TDLib.
-     * setUpdatesHandler() and setDir() must be called before this function.
+     * setUpdatesHandler(), setDir(), setFilesDir() and setFileLogEnabled() must be called before this function.
      */
     public static Client getClientInstance() {
         if (instance == null) {
@@ -99,9 +149,9 @@ public final class TG {
                         return null;
                     }
                     if (filesDir == null) {
-                      filesDir = dir;
+                        filesDir = dir;
                     }
-                    Client local = Client.create(updatesHandler, dir, filesDir);
+                    Client local = Client.create(updatesHandler, dir, filesDir, enableFileLog, useTestDc);
                     new Thread(local).start();
                     instance = local;
                 }

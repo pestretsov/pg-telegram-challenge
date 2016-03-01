@@ -128,14 +128,16 @@ public class Client implements Runnable {
      * @param updatesHandler Handler for incoming updates.
      * @param dir            Directory for persistent database.
      * @param filesDir       Directory for files.
+     * @param enableFileLog  True, if log should be written to the file.
      * @throws NullPointerException if dir is null.
      */
-    static Client create(ResultHandler updatesHandler, String dir, String filesDir) {
+    static Client create(ResultHandler updatesHandler, String dir, String filesDir,
+                         boolean enableFileLog, boolean useTestDc) {
         if (dir == null || filesDir == null) {
             throw new NullPointerException();
         }
 
-        return new Client(updatesHandler, dir, filesDir);
+        return new Client(updatesHandler, dir, filesDir, enableFileLog, useTestDc);
     }
 
     /**
@@ -167,9 +169,9 @@ public class Client implements Runnable {
         }
     }
 
-    private Client(ResultHandler updatesHandler, String dir, String filesDir) {
+    private Client(ResultHandler updatesHandler, String dir, String filesDir, boolean enableFileLog, boolean useTestDc) {
         long nativeClientId = NativeClient.createClient();
-        NativeClient.clientInit(nativeClientId, dir, filesDir);
+        NativeClient.clientInit(nativeClientId, dir, filesDir, enableFileLog, useTestDc);
 
         stopFlag = false;
         this.nativeClientId = nativeClientId;

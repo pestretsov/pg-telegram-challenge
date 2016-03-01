@@ -79,7 +79,7 @@ public class AuthCodeFragment extends Fragment implements Acceptable, ObserverAp
 
     @Override
     public void accept() {
-        getApplication().sendRequest(new TdApi.SetAuthCode(passCode.getText().toString()));
+        getApplication().sendRequest(new TdApi.CheckAuthCode(passCode.getText().toString()));
     }
 
     @Override
