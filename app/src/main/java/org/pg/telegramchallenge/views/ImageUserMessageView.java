@@ -8,6 +8,7 @@ import android.util.AttributeSet;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.Request;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 
@@ -24,6 +25,17 @@ public class ImageUserMessageView extends BaseUserMessageView {
     private String mImagePath;
     private Drawable mImageDrawable;
     private ViewTarget<ImageUserMessageView, GlideDrawable> glideTarget = new ViewTarget<ImageUserMessageView, GlideDrawable>(this) {
+
+        @Override
+        public Request getRequest() {
+            return null;
+        }
+
+        @Override
+        public void setRequest(Request request) {
+
+        }
+
         @Override
         public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> glideAnimation) {
             mImageDrawable = resource;
@@ -114,6 +126,7 @@ public class ImageUserMessageView extends BaseUserMessageView {
             throw new IllegalArgumentException("Height or width cannot be zero!");
         }
 
+        mImageDrawable = null;
         mImageWidth = imageWidth;
         mImageHeight = imageHeight;
         mImagePath = path;
