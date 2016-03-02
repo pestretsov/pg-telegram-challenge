@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import org.pg.telegramchallenge.views.BaseChatItemView;
 import org.pg.telegramchallenge.views.BaseUserMessageView;
 import org.pg.telegramchallenge.views.ChatListItemView;
+import org.pg.telegramchallenge.views.ImageUserMessageView;
+import org.pg.telegramchallenge.views.TextUserMessageView;
 
 
 /**
@@ -39,20 +41,27 @@ public class EmptyFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_empty, container, false);
 
-        ChatListItemView itemView = (ChatListItemView) view.findViewById(R.id.sample_view);
-        itemView.setStatus(ChatListItemView.MessageStatus.UNREAD);
+        ImageUserMessageView itemView = (ImageUserMessageView) view.findViewById(R.id.sample_view_2);
 
+//        itemView.setDetailsVisibility(false);
+        itemView.setBarVisability(false);
+        itemView.setDateVisability(false);
         itemView.setOnClickListener(new View.OnClickListener() {
+            int width = 10;
+            int height = 5;
 
-            int count = 1;
             @Override
             public void onClick(View v) {
-                ((ChatListItemView) v).setUnreadCount(count);
-                count += 1;
+                ((ImageUserMessageView) v).setImage("http://www.saharniy-diabet.com/userfiles/apel.jpg", width, height);
+                width *= 2;
+                height *= 2;
             }
         });
 
-        BaseChatItemView messageView = (BaseChatItemView) view.findViewById(R.id.message);
+        BaseUserMessageView messageView = (BaseUserMessageView) view.findViewById(R.id.message);
+        messageView.setBarVisability(false);
+        messageView.setDateVisability(false);
+        messageView.setDetailsVisibility(false);
         messageView.setOnClickListener(new View.OnClickListener() {
 
             boolean b = false;
@@ -63,9 +72,7 @@ public class EmptyFragment extends Fragment {
 //                ((BaseChatItemView) v).setBarVisability(b);
 //                ((BaseUserMessageView) v).setDetailsVisibility(b);
                 ((BaseUserMessageView) v).setStatus(ChatListItemView.MessageStatus.values()[i++%3]);
-
                 b = !b;
-
             }
         });
 

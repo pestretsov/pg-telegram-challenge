@@ -47,7 +47,7 @@ public class BaseUserMessageView extends BaseChatItemView {
     private TextPaint mTitleTextPaint;
 
     private TextPaint mTimeTextPaint;
-    private float mTitleTextSize;
+    protected float mTitleTextSize;
 
     private float mTimeTextSize;
     private int mTitleTextColor;
@@ -56,7 +56,7 @@ public class BaseUserMessageView extends BaseChatItemView {
     private String mAvatarImageFilePath;
 
     private ChatListItemView.MessageStatus mStatus = ChatListItemView.MessageStatus.UNREAD;
-    private static Drawable clockIcon, badgeIcon;
+    protected static Drawable clockIcon, badgeIcon;
     private static int badgeColor;
 
     {
@@ -152,6 +152,10 @@ public class BaseUserMessageView extends BaseChatItemView {
         setMeasuredDimension(width, height);
     }
 
+    protected int getStatusCenterY(){
+        return (int)(mTitleTextSize + (mTimeTextPaint.ascent() + mTimeTextPaint.descent())/2);
+    }
+
     @SuppressWarnings("Duplicates")
     @Override
     protected void onDraw(Canvas canvas) {
@@ -171,6 +175,29 @@ public class BaseUserMessageView extends BaseChatItemView {
 
         String initials = initialsBuilder.toString().toUpperCase();
         int avatarImageRadius = dpToPx(dpAvatarRadius, c);
+
+        float statusCenterY = top + getStatusCenterY();
+        float iconRadius = 0;
+        switch (mStatus) {
+            case UNREAD:
+                iconRadius = mTitleTextSize/4;
+//                    iconRadius = clockIcon.getIntrinsicHeight()/2;
+                badgeIcon.setBounds((int)(right - iconRadius*2),
+                        (int)(statusCenterY-iconRadius),
+                        right,
+                        (int)(statusCenterY+iconRadius));
+                badgeIcon.draw(canvas);
+                break;
+            case DELIVERING:
+                iconRadius = clockIcon.getIntrinsicHeight()/2;
+                clockIcon.setBounds(right - (int)(iconRadius*2),
+                        (int)(statusCenterY - iconRadius),
+                        right,
+                        (int)(statusCenterY + iconRadius));
+                clockIcon.draw(canvas);
+                break;
+        }
+
         if (mDetailsVisibility) {
             if (mAvatarDrawable == null) {
                 canvas.drawCircle(left + avatarImageRadius,
@@ -189,28 +216,6 @@ public class BaseUserMessageView extends BaseChatItemView {
             int textPadding = dpToPx(mTextPadding, c);
             int titleStartX = left + avatarImageRadius*2 + textPadding;
             int titleStartY = top + (int)mTitleTextSize;
-
-            float statusCenterY = titleStartY + (mTimeTextPaint.ascent() + mTimeTextPaint.descent())/2;
-            float iconRadius = 0;
-            switch (mStatus) {
-                case UNREAD:
-                    iconRadius = mTitleTextSize/4;
-//                    iconRadius = clockIcon.getIntrinsicHeight()/2;
-                    badgeIcon.setBounds((int)(right - iconRadius*2),
-                            (int)(statusCenterY-iconRadius),
-                            right,
-                            (int)(statusCenterY+iconRadius));
-                    badgeIcon.draw(canvas);
-                    break;
-                case DELIVERING:
-                    iconRadius = clockIcon.getIntrinsicHeight()/2;
-                    clockIcon.setBounds(right - (int)(iconRadius*2),
-                            (int)(statusCenterY - iconRadius),
-                            right,
-                            (int)(statusCenterY + iconRadius));
-                    clockIcon.draw(canvas);
-                    break;
-            }
 
             final String timeString = timeFormat.format(mDate.getTime());
             int timeLength = (int) mTimeTextPaint.measureText(timeString);
