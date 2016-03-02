@@ -65,10 +65,13 @@
         <item name="colorPrimary">@color/accent_telegram_blue</item>
 
         <item name="colorControlNormal">@color/default_telegram_grey</item>
+
         <item name="colorControlActivated">@color/accent_telegram_blue</item>
 
         <item name="android:textColorHint">@color/test_color</item>
         <item name="myDrawable">@drawable/ic_check</item>
+
+        <item name="android:windowBackground">@color/default_telegram_white</item>
     </style>
 
 </resources>

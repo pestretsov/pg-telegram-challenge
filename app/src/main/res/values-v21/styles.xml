@@ -11,5 +11,7 @@
                 <item name="android:textColorHint">@color/test_color</item>
                 <item name="android:windowTranslucentStatus">true</item>
                 <item name="myDrawable">@drawable/ic_check</item>
+
+                <item name="android:windowBackground">@color/default_telegram_white</item>
         </style>
 </resources>

@@ -81,8 +81,8 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
     private long offsetChatId = 0;
     // объяснение магических чисел
     // https://vk.com/board55882680?act=search&q=offsetOrder
-    private long offsetOrder = 9223372036854775807L; // == 2^63-1
-    private int chatsCounter = 0;
+    private static long offsetOrder = 9223372036854775807L; // == 2^63-1
+    private static int chatsCounter = 0;
 
     private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
 
@@ -263,7 +263,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
         int n = obj.chats.length;
         if (n != 0) {
-//            TODO: THIS OR
             offsetChatId = obj.chats[n-1].id;
             offsetOrder = obj.chats[n-1].order;
             chatListAdapter.changeData(chatsCounter, obj.chats);
@@ -273,9 +272,6 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
 
     @Override
     public void proceed(TdApi.UpdateChatOrder obj) {
-        // TODO: OR THAT ?
-//        offsetOrder = obj.order;
-//        offsetChatId = obj.chatId;
     }
 
     public static class ItemDivider extends RecyclerView.ItemDecoration {
@@ -340,4 +336,5 @@ public class ChatListFragment extends Fragment implements ObserverApplication.On
         menu.clear();
         inflater.inflate(R.menu.menu_chat_list, menu);
     }
+
 }

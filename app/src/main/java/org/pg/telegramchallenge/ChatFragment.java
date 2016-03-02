@@ -1,6 +1,7 @@
 package org.pg.telegramchallenge;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;

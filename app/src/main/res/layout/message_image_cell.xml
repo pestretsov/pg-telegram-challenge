@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <org.pg.telegramchallenge.views.ImageUserMessageView
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-</org.pg.telegramchallenge.views.ImageUserMessageView>
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/TextUserMessageViewStyle"
+    android:id="@+id/content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="@dimen/activity_horizontal_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+/>

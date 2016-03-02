@@ -13,7 +13,9 @@ import org.pg.telegramchallenge.MainActivity;
 import org.pg.telegramchallenge.ObserverApplication;
 import org.pg.telegramchallenge.R;
 import org.pg.telegramchallenge.utils.Utils;
+import org.pg.telegramchallenge.views.BaseUserMessageView;
 import org.pg.telegramchallenge.views.ChatListItemView;
+import org.pg.telegramchallenge.views.ImageUserMessageView;
 import org.pg.telegramchallenge.views.TextUserMessageView;
 
 import java.util.ArrayList;
@@ -29,15 +31,19 @@ import java.util.Stack;
 /**
  * Created by artemypestretsov on 2/18/16.
  */
-public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnUpdateChatReadOutboxObserver {//, ObserverApplication.OnGetGroupFullObserver {
+public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateFileObserver {//, ObserverApplication.OnGetGroupFullObserver {
     private static final String TAG = ChatAdapter.class.getSimpleName();
+
+    private static final int VIEW_TYPE_TEXT = 0;
+    private static final int VIEW_TYPE_IMAGE = 1;
+    private static final int VIEW_TYPE_STICKER = 2;
 
     private Long chatId = null;
     private TdApi.GroupFull groupFull = null;
     private TdApi.Chat chat = null;
     private int lastPos = 0;
 
-    private Context context;
+    private ObserverApplication context;
     private MainActivity activity;
 
     private LinkedList<TdApi.Message> messagesList = new LinkedList<>();
@@ -72,14 +78,39 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
     }
 
     @Override
-    public ChatAdapter.ChatVH onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_cell, parent, false);
-
-        return new ChatVH(view);
+    public int getItemViewType(int position) {
+        TdApi.Message item = messagesList.get(position);
+        if (item.content instanceof TdApi.MessageText) {
+            return VIEW_TYPE_TEXT;
+        } else if (item.content instanceof TdApi.MessagePhoto) {
+            return VIEW_TYPE_IMAGE;
+        } else if (item.content instanceof TdApi.MessageSticker) {
+            return VIEW_TYPE_STICKER;
+        } else {
+            return -1;
+        }
+//        return super.getItemViewType(position);
     }
 
     @Override
-    public void onBindViewHolder(ChatVH holder, int position) {
+    public BaseViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
+        switch (viewType) {
+            case VIEW_TYPE_TEXT:
+                return new TextUserMessageViewHolder(inflateCustomView(R.layout.message_text_cell, parent));
+            case VIEW_TYPE_IMAGE:
+                return new ImageUserMessageViewHolder(inflateCustomView(R.layout.message_image_cell, parent));
+            default:
+                return new TextUserMessageViewHolder(inflateCustomView(R.layout.message_text_cell, parent));
+        }
+    }
+
+    private View inflateCustomView(int res, ViewGroup parent) {
+        return LayoutInflater.from(parent.getContext()).inflate(res, parent, false);
+    }
+
+    @Override
+    public void onBindViewHolder(BaseViewHolder holder, int position) {
         if (messagesList == null) {
             return;
         }
@@ -110,43 +141,52 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
             }
         }
 
-        holder.chatItemView.setDate(cal);
-
-        if (msgPrev != null && msgPrev.fromId == msg.fromId && dt <= 5) {
-            holder.chatItemView.setDetailsVisibility(false);
-        } else {
-            holder.chatItemView.setDetailsVisibility(true);
-        }
+        holder.setDate(cal);
 
         if (sameDay) {
-            holder.chatItemView.setDateVisability(false);
+            holder.setDateVisibility(false);
         } else {
-            holder.chatItemView.setDateVisability(true);
-            holder.chatItemView.setDetailsVisibility(true);
+            holder.setDateVisibility(true);
+            if (holder instanceof BaseUserMessageViewHolder) {
+                ((BaseUserMessageViewHolder)holder).setDetailsVisibility(true);
+            }
         }
 
-        holder.chatItemView.setBarVisability(false);
-
-
-
-        holder.chatItemView.setStatus(ChatListItemView.MessageStatus.READ);
-        if (!(msg.sendState instanceof TdApi.MessageIsIncoming) && msg.id > chat.lastReadOutboxMessageId) {
-            holder.chatItemView.setStatus(ChatListItemView.MessageStatus.UNREAD);
+        switch (getItemViewType(position)) {
+            case VIEW_TYPE_IMAGE:
+                setPhoto((ImageUserMessageViewHolder)holder, (TdApi.MessagePhoto)msg.content);
+                break;
+//            case VIEW_TYPE_STICKER:
+//                ((ImageUserMessageViewHolder)holder).setImage();
+//                break;
+            case VIEW_TYPE_TEXT:
+                String text = ((TdApi.MessageText)msg.content).text;
+                ((TextUserMessageViewHolder)holder).setText(text);
+                break;
+            default:
+                ((TextUserMessageViewHolder)holder).setText("BOSS");
         }
 
-        try {
-            holder.chatItemView.setTitle(usr.firstName, usr.lastName);
-        } catch (NullPointerException e) {
-            Log.e("TAG", "shouldntBeThatBad");
-        }
+        if (holder instanceof BaseUserMessageViewHolder) {
+            ((BaseUserMessageViewHolder)holder).setTitle(usr.firstName, usr.lastName);
+            if (msgPrev != null && msgPrev.fromId == msg.fromId && dt <= 5) {
+                ((BaseUserMessageViewHolder) holder).setDetailsVisibility(false);
+            } else {
+                ((BaseUserMessageViewHolder) holder).setDetailsVisibility(true);
+            }
 
-        String text = "BOSS";
-        if (msg.content instanceof TdApi.MessageText && ((TdApi.MessageText) msg.content).text.length() > 0) {
-            text = ((TdApi.MessageText)msg.content).text;
-            holder.chatItemView.setText(text);
-        } else {
-            holder.chatItemView.setText(text);
+            ((BaseUserMessageViewHolder) holder).setStatus(ChatListItemView.MessageStatus.READ);
+            if (!(msg.sendState instanceof TdApi.MessageIsIncoming) && msg.id > chat.lastReadOutboxMessageId) {
+                ((BaseUserMessageViewHolder) holder).setStatus(ChatListItemView.MessageStatus.UNREAD);
+            }
+
+            try {
+                handleAvatar((BaseUserMessageViewHolder)holder, usr.profilePhoto);
+            } catch (NullPointerException e) {
+                Log.e("TAG", String.valueOf(msg.fromId));
+            }
         }
+        holder.setBarVisibility(false);
     }
 
     @Override
@@ -187,14 +227,64 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatVH> implem
 //    }
 
 
-    public class ChatVH extends RecyclerView.ViewHolder {
+    private boolean setPhoto(ImageUserMessageViewHolder holder, TdApi.MessagePhoto msg) {
+        TdApi.Photo p = msg.photo;
+        String path = p.photos[2].photo.path;
+        if (!path.isEmpty()) {
+            int width = p.photos[2].width;
+            int height = p.photos[2].height;
+            holder.setImage(p.photos[2].photo.path, width, height);
+        } else {
+            holder.setAvatarFilePath(null);
+            if (p.photos[2].photo.id != 0) {
+                context.sendRequest(new TdApi.DownloadFile(p.photos[2].photo.id));
+                return true;
+            }
+        }
 
-        private TextUserMessageView chatItemView;
+        return false;
+    }
 
-        public ChatVH(View itemView) {
-            super(itemView);
+    /**
+     *
+     * @param holder to load avatar into
+     * @param p which is need to be downloaded
+     * @return true if had started downloading
+     */
+    private boolean handleAvatar(BaseUserMessageViewHolder holder, TdApi.ProfilePhoto p) {
+        if (!(p.small.path.isEmpty())) {
+            holder.setAvatarFilePath((p.small.path));
+        } else {
+            holder.setAvatarFilePath(null);
+            if (p.small.id != 0) {
+                context.sendRequest(new TdApi.DownloadFile(p.small.id));
+                return true;
+            }
+        }
 
-            chatItemView = (TextUserMessageView) itemView.findViewById(R.id.chat_itemview);
+        return false;
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateFile obj) {
+        int i = 0;
+        for (TdApi.Message msg : messagesList) {
+            if (ObserverApplication.users.containsKey(msg.fromId)) {
+                TdApi.User usr = ObserverApplication.users.get(msg.fromId);
+                if (obj.file.id == usr.profilePhoto.small.id) {
+                    usr.profilePhoto.small = obj.file;
+                    this.notifyItemChanged(i);
+                    break;
+                }
+            }
+            if (msg.content instanceof TdApi.MessagePhoto) {
+                if (obj.file.id == ((TdApi.MessagePhoto) msg.content).photo.photos[2].photo.id) {
+                    ((TdApi.MessagePhoto) msg.content).photo.photos[2].photo = obj.file;
+                    this.notifyItemChanged(i);
+                    break;
+                }
+            }
+            i++;
         }
     }
 }
