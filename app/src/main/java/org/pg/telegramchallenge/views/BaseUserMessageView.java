@@ -16,6 +16,7 @@ import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.Request;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.ViewTarget;
 import org.pg.telegramchallenge.R;
@@ -83,6 +84,17 @@ public class BaseUserMessageView extends BaseChatItemView {
     }
 
     private ViewTarget<BaseUserMessageView, Bitmap> glideTarget = new ViewTarget<BaseUserMessageView, Bitmap>(this) {
+
+        @Override
+        public Request getRequest() {
+            return null;
+        }
+
+        @Override
+        public void setRequest(Request request) {
+
+        }
+
         @Override
         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
             RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(getContext().getResources(), resource);
