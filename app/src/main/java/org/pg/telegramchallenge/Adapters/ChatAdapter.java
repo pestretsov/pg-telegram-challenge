@@ -153,8 +153,10 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         }
 
         switch (getItemViewType(position)) {
+            // TODO: ROMAN -- HERE
             case VIEW_TYPE_IMAGE:
-                setPhoto((ImageUserMessageViewHolder)holder, (TdApi.MessagePhoto)msg.content);
+//                setPhoto((ImageUserMessageViewHolder)holder, (TdApi.MessagePhoto)msg.content);
+                ((ImageUserMessageViewHolder)holder).setImage("http://www.myfruit.it/wp-content/uploads/2015/04/08-04-2015-Mercato-mele.-Ottimi-i-dati-anche-a-fine-marzo.jpg", 900, 900);
                 break;
 //            case VIEW_TYPE_STICKER:
 //                ((ImageUserMessageViewHolder)holder).setImage();
@@ -233,7 +235,7 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         if (!path.isEmpty()) {
             int width = p.photos[2].width;
             int height = p.photos[2].height;
-            holder.setImage(p.photos[2].photo.path, width, height);
+            holder.setImage(path, width, height);
         } else {
             holder.setAvatarFilePath(null);
             if (p.photos[2].photo.id != 0) {
