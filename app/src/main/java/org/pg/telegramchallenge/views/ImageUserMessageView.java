@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 
 import com.bumptech.glide.Glide;
@@ -121,7 +122,7 @@ public class ImageUserMessageView extends BaseUserMessageView {
         }
     }
 
-    public void setImage(String path, int imageWidth, int imageHeight) {
+    public void setImage(@Nullable String path, int imageWidth, int imageHeight) {
         if (imageHeight == 0 || imageWidth == 0) {
             throw new IllegalArgumentException("Height or width cannot be zero!");
         }
@@ -132,6 +133,9 @@ public class ImageUserMessageView extends BaseUserMessageView {
         mImagePath = path;
         requestLayout();
         invalidate();
-        Glide.with(getContext()).load(path).override(imageWidth, imageHeight).into(glideTarget);
+
+        if (mImagePath != null && !mImagePath.isEmpty()) {
+            Glide.with(getContext()).load(path).override(imageWidth, imageHeight).into(glideTarget);
+        }
     }
 }

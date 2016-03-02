@@ -155,8 +155,8 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         switch (getItemViewType(position)) {
             // TODO: ROMAN -- HERE
             case VIEW_TYPE_IMAGE:
-//                setPhoto((ImageUserMessageViewHolder)holder, (TdApi.MessagePhoto)msg.content);
-                ((ImageUserMessageViewHolder)holder).setImage("http://www.myfruit.it/wp-content/uploads/2015/04/08-04-2015-Mercato-mele.-Ottimi-i-dati-anche-a-fine-marzo.jpg", 900, 900);
+                setPhoto((ImageUserMessageViewHolder)holder, (TdApi.MessagePhoto)msg.content);
+//                ((ImageUserMessageViewHolder)holder).setImage("http://www.myfruit.it/wp-content/uploads/2015/04/08-04-2015-Mercato-mele.-Ottimi-i-dati-anche-a-fine-marzo.jpg", 900, 900);
                 break;
 //            case VIEW_TYPE_STICKER:
 //                ((ImageUserMessageViewHolder)holder).setImage();
@@ -231,12 +231,13 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
 
     private boolean setPhoto(ImageUserMessageViewHolder holder, TdApi.MessagePhoto msg) {
         TdApi.Photo p = msg.photo;
+
         String path = p.photos[2].photo.path;
-        if (!path.isEmpty()) {
-            int width = p.photos[2].width;
-            int height = p.photos[2].height;
-            holder.setImage(path, width, height);
-        } else {
+        int width = p.photos[2].width;
+        int height = p.photos[2].height;
+        holder.setImage(path, width, height);
+
+        if (path.isEmpty()) {
             holder.setAvatarFilePath(null);
             if (p.photos[2].photo.id != 0) {
                 context.sendRequest(new TdApi.DownloadFile(p.photos[2].photo.id));
