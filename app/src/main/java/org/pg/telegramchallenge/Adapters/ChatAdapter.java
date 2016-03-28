@@ -26,12 +26,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Observer;
 import java.util.Stack;
 
 /**
  * Created by artemypestretsov on 2/18/16.
  */
-public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateFileObserver {//, ObserverApplication.OnGetGroupFullObserver {
+public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements ObserverApplication.OnGetChatHistoryObserver, ObserverApplication.OnUpdateChatReadOutboxObserver, ObserverApplication.OnUpdateFileObserver, ObserverApplication.ChatObserver, ObserverApplication.OnUpdateMessageIdObserver {
     private static final String TAG = ChatAdapter.class.getSimpleName();
 
     private static final int VIEW_TYPE_TEXT = 0;
@@ -48,6 +49,7 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
 
     private LinkedList<TdApi.Message> messagesList = new LinkedList<>();
 //    private Map<Integer, TdApi.User> usersMap = new HashMap<>();
+    private Map<Integer, TdApi.Message> sentMessagesList = new HashMap<>();
 
     public ChatAdapter(Context context, Activity activity, long id) {
         this.chatId = id;
@@ -99,6 +101,8 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
             case VIEW_TYPE_TEXT:
                 return new TextUserMessageViewHolder(inflateCustomView(R.layout.message_text_cell, parent));
             case VIEW_TYPE_IMAGE:
+                return new ImageUserMessageViewHolder(inflateCustomView(R.layout.message_image_cell, parent));
+            case VIEW_TYPE_STICKER:
                 return new ImageUserMessageViewHolder(inflateCustomView(R.layout.message_image_cell, parent));
             default:
                 return new TextUserMessageViewHolder(inflateCustomView(R.layout.message_text_cell, parent));
@@ -156,11 +160,10 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
             // TODO: ROMAN -- HERE
             case VIEW_TYPE_IMAGE:
                 setPhoto((ImageUserMessageViewHolder)holder, (TdApi.MessagePhoto)msg.content);
-//                ((ImageUserMessageViewHolder)holder).setImage("http://www.myfruit.it/wp-content/uploads/2015/04/08-04-2015-Mercato-mele.-Ottimi-i-dati-anche-a-fine-marzo.jpg", 900, 900);
                 break;
-//            case VIEW_TYPE_STICKER:
-//                ((ImageUserMessageViewHolder)holder).setImage();
-//                break;
+            case VIEW_TYPE_STICKER:
+                setSticker((ImageUserMessageViewHolder)holder, (TdApi.MessageSticker)msg.content);
+                break;
             case VIEW_TYPE_TEXT:
                 String text = ((TdApi.MessageText)msg.content).text;
                 ((TextUserMessageViewHolder)holder).setText(text);
@@ -169,8 +172,14 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
                 ((TextUserMessageViewHolder)holder).setText("BOSS");
         }
 
+        // TODO: usr can be null -- why!? -- проверить на чате библиотеки программиста
         if (holder instanceof BaseUserMessageViewHolder) {
-            ((BaseUserMessageViewHolder)holder).setTitle(usr.firstName, usr.lastName);
+            if (chat.type instanceof TdApi.ChannelChatInfo) {
+                ((BaseUserMessageViewHolder) holder).setTitle(chat.title, null);
+            } else {
+                assert usr != null;
+                ((BaseUserMessageViewHolder) holder).setTitle(usr.firstName, usr.lastName);
+            }
             if (msgPrev != null && msgPrev.fromId == msg.fromId && dt <= 5) {
                 ((BaseUserMessageViewHolder) holder).setDetailsVisibility(false);
             } else {
@@ -203,14 +212,14 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         lastPos+=obj.totalCount;
     }
 
-
-    public void proceed(TdApi.UpdateNewMessage obj) {
-        messagesList.addFirst(obj.message);
-        this.notifyItemInserted(0);
+    @Override
+    public void proceed(TdApi.UpdateChatReadOutbox obj) {
+        chat = ObserverApplication.chats.get(chatId);
+        this.notifyDataSetChanged();
     }
 
     @Override
-    public void proceed(TdApi.UpdateChatReadOutbox obj) {
+    public void proceed(TdApi.Chat obj) {
         chat = ObserverApplication.chats.get(chatId);
         this.notifyDataSetChanged();
     }
@@ -228,7 +237,26 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
 //        }
 //    }
 
+    private boolean setSticker(ImageUserMessageViewHolder holder, TdApi.MessageSticker msg) {
+        TdApi.Sticker s = msg.sticker;
 
+        String path = s.sticker.path;
+        int width = s.width;
+        int height = s.height;
+        holder.setImage(path, width, height);
+
+        if (path.isEmpty()) {
+            if (s.sticker.id != 0) {
+                context.sendRequest(new TdApi.DownloadFile(s.sticker.id));
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
+    // TODO: add logic if no MEDIUM size
     private boolean setPhoto(ImageUserMessageViewHolder holder, TdApi.MessagePhoto msg) {
         TdApi.Photo p = msg.photo;
 
@@ -238,7 +266,6 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         holder.setImage(path, width, height);
 
         if (path.isEmpty()) {
-            holder.setAvatarFilePath(null);
             if (p.photos[2].photo.id != 0) {
                 context.sendRequest(new TdApi.DownloadFile(p.photos[2].photo.id));
                 return true;
@@ -255,10 +282,11 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
      * @return true if had started downloading
      */
     private boolean handleAvatar(BaseUserMessageViewHolder holder, TdApi.ProfilePhoto p) {
-        if (!(p.small.path.isEmpty())) {
-            holder.setAvatarFilePath((p.small.path));
-        } else {
-            holder.setAvatarFilePath(null);
+
+        holder.setAvatarFilePath((p.small.path));
+
+        if (p.small.path.isEmpty()) {
+//            holder.setAvatarFilePath(null);
             if (p.small.id != 0) {
                 context.sendRequest(new TdApi.DownloadFile(p.small.id));
                 return true;
@@ -287,7 +315,31 @@ public class ChatAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
                     break;
                 }
             }
+            if (msg.content instanceof TdApi.MessageSticker) {
+                if (obj.file.id == ((TdApi.MessageSticker) msg.content).sticker.sticker.id) {
+                    ((TdApi.MessageSticker) msg.content).sticker.sticker = obj.file;
+                    this.notifyItemChanged(i);
+                    break;
+                }
+            }
             i++;
         }
+    }
+
+    @Override
+    public void proceed(TdApi.UpdateMessageId obj) {
+        TdApi.Message msg = sentMessagesList.get(obj.oldId);
+        msg.id = obj.newId;
+    }
+
+    public void proceed(TdApi.Message obj) {
+        sentMessagesList.put(obj.id, obj);
+        messagesList.addFirst(obj);
+        this.notifyItemInserted(0);
+    }
+
+    public void proceed(TdApi.UpdateNewMessage obj) {
+        messagesList.addFirst(obj.message);
+        this.notifyItemInserted(0);
     }
 }

@@ -10,11 +10,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.Client;
@@ -25,18 +33,22 @@ import org.pg.telegramchallenge.utils.Utils;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ChatFragment extends Fragment implements ObserverApplication.ChatObserver, ObserverApplication.ConcreteChatObserver,  ObserverApplication.OnGetChatHistoryObserver {
-//    final CountDownLatch latch = new CountDownLatch(1);
 
     private Toolbar toolbar;
     private RecyclerView chatRecyclerView;
     private ChatAdapter chatAdapter;
     private LinearLayoutManager layoutManager;
+    private EditText messageEditText;
+    private ImageView messageSendButton;
+    private ImageView recordVoiceButton;
+    private ImageView attachItemButton;
 
     private TdApi.Chat chat;
 
@@ -50,12 +62,7 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
     private int totalItems, visibleThreshold = 30, firstVisible, totalVisible, previousTotal = 0;
     private int offset = 10;
 
-
     private int msgStartFromId = 0;
-
-//    public void setChat(TdApi.Chat chat) {
-//        this.chat = chat;
-//    }
 
     public ObserverApplication getApplication(){
         return (ObserverApplication) getActivity().getApplication();
@@ -97,14 +104,56 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
         layoutManager = new LinearLayoutManager(getActivity());
         layoutManager.setReverseLayout(true);
-        layoutManager.setStackFromEnd(false);
 
         getApplication().sendRequest(new TdApi.OpenChat(chatId));
 
         chatRecyclerView = (RecyclerView) view.findViewById(R.id.chat_recycler_view);
-        layoutManager.supportsPredictiveItemAnimations();
+
+        messageSendButton = (ImageView) view.findViewById(R.id.btn_send);
+        recordVoiceButton = (ImageView) view.findViewById(R.id.btn_right2);
+        attachItemButton = (ImageView) view.findViewById(R.id.btn_right1);
+
+
+
+        messageEditText = (EditText) view.findViewById(R.id.message_input);
+        messageEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (before == 0 && count > 0) {
+                    recordVoiceButton.setVisibility(View.GONE);
+                    attachItemButton.setVisibility(View.GONE);
+                    messageSendButton.setVisibility(View.VISIBLE);
+                }
+
+                if (start == 0 && before > 0) {
+                    messageSendButton.setVisibility(View.GONE);
+                    recordVoiceButton.setVisibility(View.VISIBLE);
+                    attachItemButton.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+
+        messageSendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String msg = messageEditText.getText().toString();
+                TdApi.InputMessageContent msgContent = new TdApi.InputMessageText(msg,true, null);
+                getApplication().sendRequest(new TdApi.SendMessage(chatId, 0, false, false, false, new TdApi.ReplyMarkupNone(), msgContent));
+                messageEditText.getText().clear();
+            }
+        });
+
         chatRecyclerView.setLayoutManager(layoutManager);
-        chatRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        ((SimpleItemAnimator)chatRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         chatAdapter = new ChatAdapter(getApplication(), getActivity(), chat.id);
         chatRecyclerView.setAdapter(chatAdapter);
 
@@ -134,7 +183,7 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
         if (chat.type instanceof TdApi.GroupChatInfo) {
             groupId = ((TdApi.GroupChatInfo) chat.type).group.id;
             if (!ObserverApplication.groupsFull.containsKey(groupId)) {
-                new FetchGroupFull().execute(groupId);
+                new FetchGroupFull(getApplication(), chatAdapter, groupId, chatId, msgStartFromId).execute();
             } else {
                 getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
             }
@@ -151,7 +200,6 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
         getApplication().addObserver(this);
         getApplication().addObserver(chatAdapter);
-
     }
 
     @Override
@@ -166,14 +214,19 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
     @Override
     public void proceed(TdApi.Chat obj) {
-
+//        chatAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void proceedConcrete(TdApi.UpdateNewMessage obj) {
+    public void proceed(TdApi.UpdateNewMessage obj) {
         chatAdapter.proceed(obj);
+        scrollToNewMessage();
+    }
 
-//        layoutManager.scrollToPosition(0);
+    @Override
+    public void proceed(TdApi.Message obj) {
+        chatAdapter.proceed(obj);
+        scrollToNewMessage();
     }
 
     @Override
@@ -189,11 +242,29 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
         }
     }
 
-    private class FetchGroupFull extends AsyncTask<Integer, Void, Integer> implements Client.ResultHandler{
-        CountDownLatch latch = new CountDownLatch(1);
+    private void scrollToNewMessage() {
+        chatRecyclerView.scrollToPosition(0);
+    }
+
+    private static class FetchGroupFull extends AsyncTask<Integer, Void, Object> implements Client.ResultHandler {
+        private CountDownLatch latch = new CountDownLatch(1);
+        private ObserverApplication context = null;
+        private int groupId;
+        private long chatId;
+        private int msgId;
+        private ChatAdapter adapter = null;
+
+        FetchGroupFull(ObserverApplication context, ChatAdapter adapter ,int groupId, long chatId, int msgId) {
+            this.context = context;
+            this.groupId = groupId;
+            this.chatId = chatId;
+            this.msgId = msgId;
+            this.adapter = adapter;
+        }
+
         @Override
         protected Integer doInBackground(Integer... params) {
-            getApplication().sendRequest(new TdApi.GetGroupFull(groupId), this);
+            context.sendRequest(new TdApi.GetGroupFull(groupId), this);
             try {
                 latch.await();
             } catch (InterruptedException e) {
@@ -204,12 +275,12 @@ public class ChatFragment extends Fragment implements ObserverApplication.ChatOb
 
         //TODO: add spinner
         @Override
-        protected void onPostExecute(Integer integer) {
-            super.onPostExecute(integer);
+        protected void onPostExecute(Object object) {
+            super.onPostExecute(object);
 
-            getApplication().sendRequest(new TdApi.GetChatHistory(chatId, msgStartFromId, 0, 50));
+            context.sendRequest(new TdApi.GetChatHistory(chatId, msgId, 0, 50));
 
-            chatAdapter.notifyDataSetChanged();
+            adapter.notifyDataSetChanged();
         }
 
         @Override

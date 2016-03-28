@@ -29,4 +29,7 @@
     <!--for NavigationDrawer (ChatListFragment)-->
     <string name="close_drawer">Navigation View</string>
     <string name="open_drawer">Navigation View Closed</string>
+
+    <!-- for Chats -->
+    <string name="message_input_hint">Message</string>
 </resources>

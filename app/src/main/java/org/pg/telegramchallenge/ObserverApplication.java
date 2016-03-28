@@ -4,7 +4,9 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.support.v4.util.ArrayMap;
 import android.util.Log;
+import android.util.SparseArray;
 import android.widget.Toast;
 
 import org.drinkless.td.libcore.telegram.Client;
@@ -12,6 +14,7 @@ import org.drinkless.td.libcore.telegram.TG;
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.pg.telegramchallenge.service.HandlerService;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,9 +36,12 @@ public class ObserverApplication extends Application implements Client.ResultHan
     private static volatile boolean isReadyForUpdates = false;
 
     // CACHE
-    public static Map<Integer, TdApi.User> users = new HashMap<>();
-    public static Map<Integer, TdApi.GroupFull> groupsFull = new HashMap<>();
+    public static ArrayMap<Integer, TdApi.User> users = new ArrayMap<>();
+    public static ArrayMap<Integer, TdApi.GroupFull> groupsFull = new ArrayMap<>();
     public static Map<Long, TdApi.Chat> chats = new ConcurrentHashMap<>();
+
+    // Map<setId, Map<stickerId, Sticker>>
+    public static Map<Long, SparseArray<TdApi.Sticker>> stickers = new HashMap<>();
 
     // NEVER MISS UPDATES
     private static LinkedList<TdApi.UpdateNewMessage> pendingUpdateNewMessage = new LinkedList<>();
@@ -71,25 +77,26 @@ public class ObserverApplication extends Application implements Client.ResultHan
 //    }
 
 
-    private volatile List<OnErrorObserver> onErrorObservers = new LinkedList<>();
+    private List<OnErrorObserver> onErrorObservers = new LinkedList<>();
 
-    private volatile List<OnUpdateNewMessageObserver> onUpdateNewMessageObservers = new LinkedList<>();
-    private volatile List<OnUpdateUserActionObserver> onUpdateUserActionObservers = new LinkedList<>();
-    private volatile List<OnUpdateChatReadOutboxObserver> onUpdateChatReadOutboxObservers = new LinkedList<>();
-    private volatile List<OnUpdateChatReadInboxObserver> onUpdateChatReadInboxObservers = new LinkedList<>();
-    private volatile List<OnUpdateChatTitleObserver> onUpdateChatTitleObservers = new LinkedList<>();
-    private volatile List<OnUpdateChatObserver> onUpdateChatObservers = new LinkedList<>();
-    private volatile List<OnUpdateChatOrderObserver> onUpdateChatOrderObservers = new LinkedList<>();
-    private volatile List<OnUpdateFileObserver> onUpdateFileObservers = new LinkedList<>();
-    private volatile List<OnUpdateChatPhotoObserver> onUpdateChatPhotoObservers = new LinkedList<>();
+    private List<OnUpdateNewMessageObserver> onUpdateNewMessageObservers = new LinkedList<>();
+    private List<OnUpdateUserActionObserver> onUpdateUserActionObservers = new LinkedList<>();
+    private List<OnUpdateChatReadOutboxObserver> onUpdateChatReadOutboxObservers = new LinkedList<>();
+    private List<OnUpdateChatReadInboxObserver> onUpdateChatReadInboxObservers = new LinkedList<>();
+    private List<OnUpdateChatTitleObserver> onUpdateChatTitleObservers = new LinkedList<>();
+    private List<OnUpdateChatObserver> onUpdateChatObservers = new LinkedList<>();
+    private List<OnUpdateChatOrderObserver> onUpdateChatOrderObservers = new LinkedList<>();
+    private List<OnUpdateFileObserver> onUpdateFileObservers = new LinkedList<>();
+    private List<OnUpdateChatPhotoObserver> onUpdateChatPhotoObservers = new LinkedList<>();
+    private List<OnUpdateMessageIdObserver> onUpdateMessageIdObservers = new LinkedList<>();
 
 
-    private volatile List<OnAuthObserver> onAuthObservers = new LinkedList<>();
-    private volatile List<ChatsObserver> chatsObservers = new LinkedList<>();
-    private volatile List<ChatObserver> chatObservers = new LinkedList<>();
-    private volatile List<ConcreteChatObserver> concreteChatObservers = new LinkedList<>();
-    private volatile List<OnGetChatHistoryObserver> onGetChatHistoryObservers = new LinkedList<>();
-    private volatile List<OnGetGroupFullObserver> onGetGroupFullObservers = new LinkedList<>();
+    private List<OnAuthObserver> onAuthObservers = new LinkedList<>();
+    private List<ChatsObserver> chatsObservers = new LinkedList<>();
+    private List<ChatObserver> chatObservers = new LinkedList<>();
+    private List<ConcreteChatObserver> concreteChatObservers = new LinkedList<>();
+    private List<OnGetChatHistoryObserver> onGetChatHistoryObservers = new LinkedList<>();
+    private List<OnGetGroupFullObserver> onGetGroupFullObservers = new LinkedList<>();
 
     // INTERFACES
     public interface IsWaitingForPendingUpdates {
@@ -107,11 +114,12 @@ public class ObserverApplication extends Application implements Client.ResultHan
     public interface OnUpdateChatOrderObserver {void proceed(TdApi.UpdateChatOrder obj);}
     public interface OnUpdateFileObserver {void proceed(TdApi.UpdateFile obj);}
     public interface OnUpdateChatPhotoObserver {void proceed(TdApi.UpdateChatPhoto obj);}
+    public interface OnUpdateMessageIdObserver {void proceed(TdApi.UpdateMessageId obj);}
     // REQUESTS
     public interface OnAuthObserver {void proceed(TdApi.AuthState obj);}
     public interface ChatsObserver {void proceed(TdApi.Chats obj);}
     public interface ChatObserver {void proceed(TdApi.Chat obj);}
-    public interface ConcreteChatObserver {long getChatId(); void proceedConcrete(TdApi.UpdateNewMessage obj);}
+    public interface ConcreteChatObserver {long getChatId(); void proceed(TdApi.UpdateNewMessage obj); void proceed(TdApi.Message obj);}
     public interface OnGetChatHistoryObserver {void proceed(TdApi.Messages obj);}
     public interface OnGetGroupFullObserver {void proceed(TdApi.GroupFull obj);}
 
@@ -129,6 +137,8 @@ public class ObserverApplication extends Application implements Client.ResultHan
     /** i think that one method for all observers is better
      * than one for each type of them*/
     public void addObserver(Object obs) {
+
+        Log.e(TAG, Thread.currentThread().getName());
 
         if (obs instanceof OnUpdateFileObserver)
             onUpdateFileObservers.add((OnUpdateFileObserver) obs);
@@ -194,6 +204,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
                 pendingUpdateChatTitle.clear();
             }
+        }
+
+        if (obs instanceof OnUpdateMessageIdObserver) {
+            onUpdateMessageIdObservers.add((OnUpdateMessageIdObserver) obs);
         }
 
         if (obs instanceof OnUpdateChatPhotoObserver) {
@@ -270,6 +284,10 @@ public class ObserverApplication extends Application implements Client.ResultHan
             onUpdateChatTitleObservers.remove(obs);
         }
 
+        if (obs instanceof OnUpdateMessageIdObserver) {
+            onUpdateMessageIdObservers.remove(obs);
+        }
+
         if (obs instanceof OnUpdateChatPhotoObserver) {
             onUpdateChatPhotoObservers.remove(obs);
         }
@@ -332,6 +350,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
     @Override
     public void onResult(TdApi.TLObject object) {
         handler.post(new HandlerRunnable(object));
+        Log.e(TAG, Thread.currentThread().getName());
         Log.i(TAG, object.toString());
     }
 
@@ -345,7 +364,22 @@ public class ObserverApplication extends Application implements Client.ResultHan
         @Override
         public void run() {
 
+            Log.e(TAG, Thread.currentThread().getName());
+
+            if (object instanceof TdApi.UpdateStickers) {
+                sendRequest(new TdApi.GetStickerSets(false), new Client.ResultHandler() {
+                    @Override
+                    public void onResult(TdApi.TLObject object) {
+                        object.toString();
+                    }
+                });
+
+                object.toString();
+            }
+
             if (object instanceof TdApi.Update && isReadyForUpdates) {
+
+
                 if (object instanceof TdApi.UpdateFile) {
                     for (OnUpdateFileObserver observer: onUpdateFileObservers) {
                         observer.proceed((TdApi.UpdateFile) object);
@@ -355,6 +389,32 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
                 if (object instanceof TdApi.UpdateNewMessage) {
                     sendRequest(new TdApi.GetChat(((TdApi.UpdateNewMessage) object).message.chatId));
+
+//                    if (((TdApi.UpdateNewMessage) object).message.content instanceof TdApi.MessageSticker) {
+//                        TdApi.MessageSticker msg =(TdApi.MessageSticker) ((TdApi.UpdateNewMessage) object).message.content;
+//
+//                        if (stickers.containsKey(msg.sticker.setId)) {
+//                            if (stickers.get(msg.sticker.setId).get(msg.sticker.sticker.id, null) != null) {
+//                                // HAS THUMB? -- NO -- DOWNLOAD?
+//                            } else {
+//                                sendRequest(new TdApi.DownloadFile(msg.sticker.sticker.id), new Client.ResultHandler() {
+//                                    @Override
+//                                    public void onResult(TdApi.TLObject object) {
+//                                        Log.e(TAG, object.toString());
+//                                    }
+//                                });
+//                            }
+//                        } else {
+//                            sendRequest(new TdApi.GetStickerSet(msg.sticker.setId), new Client.ResultHandler() {
+//                                @Override
+//                                public void onResult(TdApi.TLObject object) {
+//                                    ObserverApplication.stickers.put(((TdApi.StickerSet)object).id, new SparseArray<TdApi.Sticker>());
+//                                }
+//                            });
+//                            // then download
+//                        }
+//                    }
+
                     if (onUpdateNewMessageObservers.size() == 0) {
                         pendingUpdateNewMessage.addLast((TdApi.UpdateNewMessage) object);
                     }
@@ -365,7 +425,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
                     for (ConcreteChatObserver observer : concreteChatObservers) {
                         if (observer.getChatId() == ((TdApi.UpdateNewMessage) object).message.chatId) {
-                            observer.proceedConcrete((TdApi.UpdateNewMessage) object);
+                            observer.proceed((TdApi.UpdateNewMessage) object);
                         }
                     }
 
@@ -385,6 +445,7 @@ public class ObserverApplication extends Application implements Client.ResultHan
                 }
 
                 if (object instanceof TdApi.UpdateChatReadOutbox) {
+                    sendRequest(new TdApi.GetChat(((TdApi.UpdateChatReadOutbox) object).chatId));
                     if (onUpdateChatReadOutboxObservers.size() == 0) {
                         pendingUpdateChatReadOutbox.addLast((TdApi.UpdateChatReadOutbox) object);
                     }
@@ -445,6 +506,13 @@ public class ObserverApplication extends Application implements Client.ResultHan
                     } else {
                         TdApi.User user = ((TdApi.UpdateUser) object).user;
                         users.put(user.id, user);
+                    }
+                    return;
+                }
+
+                if (object instanceof TdApi.UpdateMessageId) {
+                    for (OnUpdateMessageIdObserver observer : onUpdateMessageIdObservers) {
+                        observer.proceed((TdApi.UpdateMessageId) object);
                     }
                     return;
                 }
@@ -511,6 +579,20 @@ public class ObserverApplication extends Application implements Client.ResultHan
 
                 return;
             }
+
+            if (object instanceof TdApi.Message) {
+                for (ConcreteChatObserver observer : concreteChatObservers) {
+                    if (observer.getChatId() == ((TdApi.Message) object).chatId) {
+                        observer.proceed((TdApi.Message) object);
+                    }
+                }
+            }
+
+//            if (object instanceof TdApi.SendMessage) {
+//                for (ConcreteChatObserver observer : concreteChatObservers) {
+////                    observer.proceedConcrete(((TdApi.SendMessage) object).message);
+//                }
+//            }
         }
     }
 }
